@@ -1,0 +1,2527 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Takipçi Bildirimi Editörü</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --app-bg: #090912;
+  --panel-bg: #0f0f1c;
+  --panel-bg2: #161625;
+  --border: #22223a;
+  --accent: #00e5ff;
+  --accent2: #ff3d6b;
+  --accent3: #53fc18;
+  --accent4: #ffd700;
+  --text: #e2e2f0;
+  --text-muted: #55556e;
+  --text-dim: #8888aa;
+  --input-bg: #13131f;
+  --input-border: #2a2a42;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 18px;
+  --transition: 0.16s ease;
+  --panel-w: 295px;
+  --font-main: 'DM Sans', sans-serif;
+  --font-mono: 'Space Mono', monospace;
+  --font-display: 'Syne', sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  display: flex;
+  height: 100vh;
+  background: var(--app-bg);
+  color: var(--text);
+  font-family: var(--font-main);
+  overflow: hidden;
+  font-size: 13px;
+}
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #22223a; border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+/* ─── Sidebar ─── */
+.sidebar {
+  width: var(--panel-w);
+  background: var(--panel-bg);
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--border);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.sidebar.right {
+  border-right: none;
+  border-left: 1px solid var(--border);
+  width: 275px;
+}
+
+.sidebar-header {
+  padding: 18px 18px 0;
+  flex-shrink: 0;
+}
+.sidebar-header h1 {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.logo-badge {
+  width: 28px; height: 28px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--accent), #007acc);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+  box-shadow: 0 0 16px rgba(0,229,255,0.35);
+}
+
+.tab-nav {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 3px;
+  padding: 12px 10px 0;
+}
+.tab-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  padding: 6px 4px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 700;
+  font-family: var(--font-display);
+  transition: var(--transition);
+  text-align: center;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+.tab-btn:hover { border-color: var(--accent); color: var(--text); }
+.tab-btn.active {
+  background: rgba(0,229,255,0.12);
+  border-color: var(--accent);
+  color: var(--accent);
+  box-shadow: 0 0 10px rgba(0,229,255,0.2);
+}
+
+.tab-panels { flex: 1; overflow-y: auto; padding: 12px 14px 16px; }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ─── Section Titles ─── */
+.section-title {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin: 18px 0 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.section-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+.section-title:first-child { margin-top: 4px; }
+.section-title .st-icon { font-size: 11px; }
+
+/* ─── Controls ─── */
+.cg { margin-bottom: 10px; }
+.cg label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-bottom: 5px;
+  font-weight: 500;
+}
+.cg label .val {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--accent);
+  background: rgba(0,229,255,0.08);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+input[type=range] {
+  width: 100%; height: 3px; cursor: pointer;
+  -webkit-appearance: none; appearance: none;
+  background: var(--input-bg);
+  border-radius: 10px;
+  outline: none;
+  border: 1px solid var(--input-border);
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 13px; height: 13px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  box-shadow: 0 0 7px rgba(0,229,255,0.7);
+  transition: 0.15s;
+}
+input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+
+.color-row {
+  display: flex;
+  gap: 7px;
+  align-items: center;
+}
+input[type=color] {
+  width: 36px; height: 32px;
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  cursor: pointer;
+  padding: 2px;
+  flex-shrink: 0;
+}
+.color-hex {
+  flex: 1;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  color: var(--text);
+  padding: 6px 9px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  outline: none;
+  transition: var(--transition);
+}
+.color-hex:focus { border-color: var(--accent); }
+
+input[type=text], input[type=number] {
+  width: 100%;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  color: var(--text);
+  padding: 7px 10px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-main);
+  font-size: 12px;
+  outline: none;
+  transition: var(--transition);
+}
+input[type=text]:focus, input[type=number]:focus { border-color: var(--accent); }
+
+select {
+  width: 100%;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  color: var(--text);
+  padding: 7px 10px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-main);
+  font-size: 12px;
+  outline: none;
+  cursor: pointer;
+  transition: var(--transition);
+}
+select:focus { border-color: var(--accent); }
+
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 9px;
+  padding: 6px 8px;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-sm);
+}
+.toggle-row span { font-size: 11px; color: var(--text-dim); font-weight: 500; }
+.toggle-wrap { position: relative; width: 38px; height: 20px; }
+.toggle-wrap input { opacity: 0; width: 0; height: 0; }
+.toggle-slider {
+  position: absolute; inset: 0;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 20px;
+  cursor: pointer;
+  transition: 0.22s;
+}
+.toggle-slider::before {
+  content: '';
+  position: absolute;
+  width: 14px; height: 14px;
+  left: 2px; top: 2px;
+  background: var(--text-muted);
+  border-radius: 50%;
+  transition: 0.22s;
+}
+.toggle-wrap input:checked + .toggle-slider { background: rgba(0,229,255,0.2); border-color: var(--accent); }
+.toggle-wrap input:checked + .toggle-slider::before { transform: translateX(18px); background: var(--accent); }
+
+.btn {
+  display: flex; align-items: center; justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  transition: var(--transition);
+  margin-bottom: 7px;
+  text-transform: uppercase;
+}
+.btn-primary { background: linear-gradient(135deg, var(--accent), #007acc); color: #000; }
+.btn-primary:hover { box-shadow: 0 0 18px rgba(0,229,255,0.4); transform: translateY(-1px); }
+.btn-danger { background: rgba(255,61,107,0.12); color: var(--accent2); border: 1px solid rgba(255,61,107,0.28); }
+.btn-danger:hover { background: rgba(255,61,107,0.22); }
+.btn-secondary { background: var(--panel-bg2); color: var(--text-dim); border: 1px solid var(--border); }
+.btn-secondary:hover { border-color: var(--accent); color: var(--text); }
+.btn-green { background: rgba(83,252,24,0.12); color: var(--accent3); border: 1px solid rgba(83,252,24,0.28); }
+.btn-green:hover { background: rgba(83,252,24,0.22); }
+
+textarea {
+  width: 100%;
+  background: #06060e;
+  border: 1px solid var(--border);
+  color: var(--accent3);
+  padding: 9px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  resize: vertical;
+  outline: none;
+  height: 120px;
+  transition: var(--transition);
+  line-height: 1.6;
+}
+textarea:focus { border-color: var(--accent3); }
+
+/* ─── Icon Picker Grid ─── */
+.icon-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 5px;
+  margin-top: 6px;
+}
+.icon-btn {
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-sm);
+  padding: 8px 4px;
+  cursor: pointer;
+  text-align: center;
+  transition: var(--transition);
+  font-size: 16px;
+  line-height: 1;
+  display: flex; align-items: center; justify-content: center;
+}
+.icon-btn:hover, .icon-btn.active {
+  border-color: var(--accent);
+  background: rgba(0,229,255,0.1);
+  box-shadow: 0 0 8px rgba(0,229,255,0.2);
+}
+.icon-btn svg { width: 18px; height: 18px; }
+
+/* ─── Animation Picker ─── */
+.anim-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
+  margin-top: 6px;
+}
+.anim-btn {
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-sm);
+  padding: 8px 6px;
+  cursor: pointer;
+  font-size: 10px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--text-dim);
+  text-align: center;
+  transition: var(--transition);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.anim-btn:hover, .anim-btn.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(0,229,255,0.08);
+}
+
+/* ─── Platform Badge Picker ─── */
+.platform-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 5px;
+  margin-top: 6px;
+}
+.platform-btn {
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-sm);
+  padding: 7px 4px;
+  cursor: pointer;
+  font-size: 10px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--text-dim);
+  text-align: center;
+  transition: var(--transition);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.platform-btn:hover { border-color: var(--accent); color: var(--text); }
+.platform-btn.active { border-color: var(--accent3); color: var(--accent3); background: rgba(83,252,24,0.08); }
+
+/* ─── Preview Area ─── */
+.preview-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  background: var(--app-bg);
+  overflow: hidden;
+}
+.preview-area::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(0,229,255,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,229,255,0.025) 1px, transparent 1px);
+  background-size: 36px 36px;
+  pointer-events: none;
+}
+/* Corner decoration */
+.preview-area::after {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 600px; height: 600px;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(ellipse, rgba(0,229,255,0.03) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.bg-switcher {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 5px;
+  background: rgba(0,0,0,0.6);
+  padding: 5px;
+  border-radius: 30px;
+  border: 1px solid var(--border);
+  backdrop-filter: blur(12px);
+  z-index: 50;
+}
+.bg-swatch {
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: 0.15s;
+}
+.bg-swatch:hover, .bg-swatch.active { border-color: var(--accent); transform: scale(1.15); }
+
+.preview-controls {
+  position: absolute;
+  top: 16px; right: 18px;
+  display: flex; gap: 5px; z-index: 50;
+}
+.preview-ctrl-btn {
+  background: rgba(0,0,0,0.6);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  width: 30px; height: 30px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 14px;
+  display: flex; align-items: center; justify-content: center;
+  transition: var(--transition);
+  backdrop-filter: blur(10px);
+}
+.preview-ctrl-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+.widget-canvas {
+  transform-origin: center center;
+  transition: transform 0.2s ease;
+  position: relative;
+  z-index: 2;
+}
+
+/* ─── THE FOLLOWER ALERT WIDGET ─── */
+#follower-alert-preview {
+  position: relative;
+  display: flex;
+  align-items: center;
+  overflow: visible;
+  white-space: nowrap;
+  transition: transform 0.5s, opacity 0.5s;
+}
+
+.fa-glow-ring {
+  position: absolute;
+  inset: -3px;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: -1;
+  transition: opacity 0.3s;
+  opacity: 0;
+}
+
+.fa-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.fa-icon-wrap svg, .fa-icon-wrap .icon-emoji {
+  position: relative;
+  z-index: 1;
+}
+
+.fa-particle-container {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 20;
+  overflow: visible;
+}
+.fa-particle {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.fa-texts {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  position: relative;
+  z-index: 1;
+}
+.fa-label { font-weight: 800; text-transform: uppercase; line-height: 1.1; }
+.fa-username { font-weight: 700; line-height: 1.2; }
+
+.fa-platform-badge {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 800;
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  pointer-events: none;
+}
+
+/* ─── Test Controls ─── */
+.test-area {
+  position: absolute;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  z-index: 50;
+}
+.test-btn {
+  padding: 9px 20px;
+  border-radius: 30px;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  transition: var(--transition);
+  backdrop-filter: blur(12px);
+}
+.test-btn-trigger {
+  background: rgba(0,229,255,0.15);
+  color: var(--accent);
+  border: 1px solid rgba(0,229,255,0.35);
+}
+.test-btn-trigger:hover {
+  background: rgba(0,229,255,0.25);
+  box-shadow: 0 0 20px rgba(0,229,255,0.3);
+}
+.test-btn-name {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  padding: 9px 14px;
+  border-radius: 30px;
+  font-family: var(--font-main);
+  font-size: 12px;
+  outline: none;
+  min-width: 140px;
+  text-align: center;
+}
+.test-btn-name:focus { border-color: var(--accent); color: var(--text); }
+
+/* ─── Right panel ─── */
+.right-panel-content { flex: 1; overflow-y: auto; padding: 12px 14px; }
+
+.preset-save-area { margin-bottom: 16px; }
+.preset-save-area input { margin-bottom: 7px; }
+
+.preset-cards { display: flex; flex-direction: column; gap: 8px; }
+
+.preset-card {
+  background: var(--panel-bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  cursor: pointer;
+  transition: var(--transition);
+}
+.preset-card:hover { border-color: var(--accent); transform: translateY(-1px); box-shadow: 0 4px 20px rgba(0,229,255,0.15); }
+.preset-card-preview {
+  width: 100%; height: 44px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #06060e;
+}
+.preset-card-info {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 7px 10px;
+}
+.preset-card-name { font-size: 12px; font-weight: 600; color: var(--text); font-family: var(--font-display); }
+.preset-card-actions { display: flex; gap: 4px; }
+.preset-card-btn {
+  background: transparent; border: 1px solid var(--border);
+  color: var(--text-muted); width: 24px; height: 24px;
+  border-radius: 5px; cursor: pointer; font-size: 12px;
+  display: flex; align-items: center; justify-content: center;
+  transition: var(--transition);
+}
+.preset-card-btn:hover { border-color: var(--accent); color: var(--accent); }
+.preset-card-btn.del:hover { border-color: var(--accent2); color: var(--accent2); }
+
+.empty-state { text-align: center; padding: 24px 16px; color: var(--text-muted); font-size: 11px; }
+.empty-state .icon { font-size: 28px; margin-bottom: 8px; }
+
+.divider { height: 1px; background: var(--border); margin: 12px 0; }
+
+.tip { font-size: 10px; color: var(--text-muted); margin-top: 4px; font-style: italic; line-height: 1.5; }
+
+/* ─── Status Bar ─── */
+.status-bar {
+  height: 26px;
+  background: var(--panel-bg);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  gap: 16px;
+  font-size: 10px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  flex-shrink: 0;
+}
+.status-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent3); box-shadow: 0 0 7px var(--accent3); }
+.status-item { display: flex; align-items: center; gap: 4px; }
+.status-item span.accent { color: var(--accent); }
+
+/* ─── Toast ─── */
+.toast {
+  position: fixed; bottom: 38px; left: 50%;
+  transform: translateX(-50%) translateY(16px);
+  background: linear-gradient(135deg, var(--accent), #007acc);
+  color: #000; padding: 9px 20px; border-radius: 30px;
+  font-size: 12px; font-weight: 700; font-family: var(--font-display);
+  letter-spacing: 0.5px; text-transform: uppercase;
+  box-shadow: 0 4px 20px rgba(0,229,255,0.45);
+  opacity: 0; transition: all 0.28s ease; z-index: 9999; pointer-events: none;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ─── Widget Animations ─── */
+@keyframes fa-bounce-in {
+  0% { transform: translateY(-80px) scale(0.7); opacity: 0; }
+  60% { transform: translateY(8px) scale(1.05); opacity: 1; }
+  80% { transform: translateY(-4px) scale(0.98); }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+@keyframes fa-slide-in {
+  0% { transform: translateX(-120px); opacity: 0; }
+  100% { transform: translateX(0); opacity: 1; }
+}
+@keyframes fa-zoom-in {
+  0% { transform: scale(0) rotate(-10deg); opacity: 0; }
+  60% { transform: scale(1.08) rotate(2deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+@keyframes fa-flip-in {
+  0% { transform: perspective(400px) rotateX(90deg); opacity: 0; }
+  60% { transform: perspective(400px) rotateX(-12deg); opacity: 1; }
+  100% { transform: perspective(400px) rotateX(0); opacity: 1; }
+}
+@keyframes fa-shake {
+  0%,100% { transform: rotate(0); }
+  20% { transform: rotate(-12deg); }
+  40% { transform: rotate(12deg); }
+  60% { transform: rotate(-8deg); }
+  80% { transform: rotate(8deg); }
+}
+@keyframes fa-bounce-out {
+  0% { transform: translateY(0) scale(1); opacity: 1; }
+  30% { transform: translateY(-12px) scale(1.05); opacity: 1; }
+  100% { transform: translateY(-80px) scale(0.7); opacity: 0; }
+}
+@keyframes fa-slide-out {
+  0% { transform: translateX(0); opacity: 1; }
+  100% { transform: translateX(200px); opacity: 0; }
+}
+@keyframes fa-zoom-out {
+  0% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(0) rotate(10deg); opacity: 0; }
+}
+@keyframes fa-drop-down {
+  0% { transform: translateY(0); opacity:1; }
+  100% { transform: translateY(80px); opacity:0; }
+}
+@keyframes fa-pulse-icon {
+  0%,100% { transform: scale(1); }
+  50% { transform: scale(1.18); }
+}
+@keyframes fa-ring {
+  0%,100% { transform: rotate(0deg); }
+  15% { transform: rotate(-18deg); }
+  30% { transform: rotate(18deg); }
+  45% { transform: rotate(-12deg); }
+  60% { transform: rotate(12deg); }
+  75% { transform: rotate(-6deg); }
+}
+@keyframes fa-heartbeat {
+  0%,100% { transform: scale(1); }
+  14% { transform: scale(1.2); }
+  28% { transform: scale(1); }
+  42% { transform: scale(1.15); }
+  70% { transform: scale(1); }
+}
+@keyframes fa-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+@keyframes fa-float {
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+@keyframes fa-shimmer-text {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+@keyframes fa-particle-burst {
+  0% { transform: translate(0,0) scale(1); opacity: 1; }
+  100% { transform: translate(var(--px), var(--py)) scale(0); opacity: 0; }
+}
+@keyframes fa-glow-pulse {
+  0%,100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+@keyframes fa-border-travel {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+@keyframes fa-typewriter {
+  from { clip-path: inset(0 100% 0 0); }
+  to { clip-path: inset(0 0% 0 0); }
+}
+@keyframes fa-count-up {
+  0% { opacity: 0; transform: translateY(10px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+@keyframes fa-sparkle {
+  0%,100% { transform: scale(0) rotate(0deg); opacity: 0; }
+  50% { transform: scale(1) rotate(180deg); opacity: 1; }
+}
+@keyframes fa-confetti-fall {
+  0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(80px) rotate(720deg); opacity: 0; }
+}
+
+/* ─── io section ─── */
+.io-section { margin-top: 16px; }
+.io-section h2 {
+  font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--text-muted); margin-bottom: 8px; font-weight: 700;
+  font-family: var(--font-display);
+}
+</style>
+</head>
+<body>
+
+<!-- LEFT PANEL -->
+<div class="sidebar">
+  <div class="sidebar-header">
+    <h1>
+      <div class="logo-badge">🔔</div>
+      Bildirim Editörü
+    </h1>
+    <div class="tab-nav" id="tab-nav">
+      <button class="tab-btn active" data-tab="t-shape">Şekil</button>
+      <button class="tab-btn" data-tab="t-color">Renk</button>
+      <button class="tab-btn" data-tab="t-icon">İkon</button>
+      <button class="tab-btn" data-tab="t-anim">Animasyon</button>
+      <button class="tab-btn" data-tab="t-text">Yazı</button>
+      <button class="tab-btn" data-tab="t-fx">Efekt</button>
+    </div>
+  </div>
+
+  <div class="tab-panels">
+
+    <!-- SHAPE TAB -->
+    <div class="tab-panel active" id="t-shape">
+      <div class="section-title"><span class="st-icon">📐</span> Boyut</div>
+      <div class="cg">
+        <label>Genişlik <span class="val" id="vWidth">420</span> px</label>
+        <input type="range" id="cWidth" min="150" max="700" value="420">
+      </div>
+      <div class="cg">
+        <label>Yükseklik <span class="val" id="vHeight">72</span> px</label>
+        <input type="range" id="cHeight" min="40" max="180" value="72">
+      </div>
+      <div class="cg">
+        <label>Köşe Yuvarlaklığı <span class="val" id="vRadius">36</span> px</label>
+        <input type="range" id="cRadius" min="0" max="90" value="36">
+      </div>
+      <div class="cg">
+        <label>İç Boşluk (Yatay) <span class="val" id="vPadH">18</span> px</label>
+        <input type="range" id="cPadH" min="4" max="50" value="18">
+      </div>
+      <div class="cg">
+        <label>Elemanlar Arası Boşluk <span class="val" id="vGap">14</span> px</label>
+        <input type="range" id="cGap" min="4" max="40" value="14">
+      </div>
+
+      <div class="section-title"><span class="st-icon">🔷</span> Hızlı Şekil</div>
+      <div class="anim-grid">
+        <div class="anim-btn active" onclick="applyQuickShape('pill',this)">● Hap</div>
+        <div class="anim-btn" onclick="applyQuickShape('rounded',this)">▬ Yuvarlak</div>
+        <div class="anim-btn" onclick="applyQuickShape('square',this)">■ Köşeli</div>
+        <div class="anim-btn" onclick="applyQuickShape('tag',this)">🏷 Etiket</div>
+      </div>
+
+      <div class="section-title"><span class="st-icon">〰️</span> Kenarlık</div>
+      <div class="cg">
+        <label>Kenarlık Kalınlığı <span class="val" id="vBorderW">2</span> px</label>
+        <input type="range" id="cBorderW" min="0" max="8" value="2">
+      </div>
+      <div class="cg">
+        <label>Kenarlık Stili</label>
+        <select id="cBorderStyle">
+          <option value="solid">Düz</option>
+          <option value="dashed">Kesik</option>
+          <option value="dotted">Noktalı</option>
+          <option value="gradient">Degrade Kenarlık</option>
+        </select>
+      </div>
+      <div class="cg">
+        <label>Kenarlık Rengi</label>
+        <div class="color-row">
+          <input type="color" id="cBorderColor" value="#53fc18">
+          <input type="text" class="color-hex" id="cBorderColorHex" value="#53fc18">
+        </div>
+      </div>
+      <div class="cg">
+        <label>Kenarlık Şeffaflığı <span class="val" id="vBorderOp">100</span>%</label>
+        <input type="range" id="cBorderOp" min="0" max="100" value="100">
+      </div>
+
+      <div class="section-title"><span class="st-icon">📍</span> Platform Rozeti</div>
+      <div class="toggle-row">
+        <span>Platform Rozetini Göster</span>
+        <label class="toggle-wrap"><input type="checkbox" id="cShowPlatform"><span class="toggle-slider"></span></label>
+      </div>
+      <div id="platformOptions">
+        <div class="platform-grid">
+          <div class="platform-btn active" onclick="selectPlatform('kick',this)">Kick</div>
+          <div class="platform-btn" onclick="selectPlatform('twitch',this)">Twitch</div>
+          <div class="platform-btn" onclick="selectPlatform('youtube',this)">YouTube</div>
+          <div class="platform-btn" onclick="selectPlatform('tiktok',this)">TikTok</div>
+          <div class="platform-btn" onclick="selectPlatform('instagram',this)">İnsta</div>
+          <div class="platform-btn" onclick="selectPlatform('custom',this)">Özel</div>
+        </div>
+        <div class="cg" style="margin-top:8px" id="customPlatformGroup">
+          <label>Özel Metin</label>
+          <input type="text" id="cCustomPlatform" value="LIVE" maxlength="10">
+        </div>
+        <div class="cg">
+          <label>Rozet Konumu</label>
+          <select id="cPlatformPos">
+            <option value="top-right">Sağ Üst</option>
+            <option value="top-left">Sol Üst</option>
+            <option value="bottom-right">Sağ Alt</option>
+            <option value="bottom-left">Sol Alt</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- COLOR TAB -->
+    <div class="tab-panel" id="t-color">
+      <div class="section-title"><span class="st-icon">🎨</span> Arka Plan</div>
+      <div class="cg">
+        <label>Arka Plan Türü</label>
+        <select id="cBgType" onchange="onBgTypeChange(this.value)">
+          <option value="solid">Düz Renk</option>
+          <option value="gradient">Degrade</option>
+          <option value="glassmorphism" selected>Cam Efekti (Glass)</option>
+          <option value="neon">Neon Koyu</option>
+        </select>
+      </div>
+      <div id="bgSolidGroup" style="display:none">
+        <div class="cg">
+          <label>Renk</label>
+          <div class="color-row">
+            <input type="color" id="cBgSolid" value="#100c28">
+            <input type="text" class="color-hex" id="cBgSolidHex" value="#100c28">
+          </div>
+        </div>
+        <div class="cg">
+          <label>Şeffaflık <span class="val" id="vBgSolidOp">95</span>%</label>
+          <input type="range" id="cBgSolidOp" min="0" max="100" value="95">
+        </div>
+      </div>
+      <div id="bgGradientGroup" style="display:none">
+        <div class="cg">
+          <label>Renk 1</label>
+          <div class="color-row">
+            <input type="color" id="cBgGrad1" value="#100c28">
+            <input type="text" class="color-hex" id="cBgGrad1Hex" value="#100c28">
+          </div>
+        </div>
+        <div class="cg">
+          <label>Renk 2</label>
+          <div class="color-row">
+            <input type="color" id="cBgGrad2" value="#1a0a3a">
+            <input type="text" class="color-hex" id="cBgGrad2Hex" value="#1a0a3a">
+          </div>
+        </div>
+        <div class="cg">
+          <label>Açı <span class="val" id="vBgGradAngle">135</span>°</label>
+          <input type="range" id="cBgGradAngle" min="0" max="360" value="135">
+        </div>
+        <div class="cg">
+          <label>Şeffaflık <span class="val" id="vBgGradOp">95</span>%</label>
+          <input type="range" id="cBgGradOp" min="0" max="100" value="95">
+        </div>
+      </div>
+      <div id="bgGlassGroup">
+        <div class="cg">
+          <label>Cam Rengi</label>
+          <div class="color-row">
+            <input type="color" id="cGlassColor" value="#100c28">
+            <input type="text" class="color-hex" id="cGlassColorHex" value="#100c28">
+          </div>
+        </div>
+        <div class="cg">
+          <label>Cam Şeffaflığı <span class="val" id="vGlassOp">90</span>%</label>
+          <input type="range" id="cGlassOp" min="40" max="100" value="90">
+        </div>
+        <div class="cg">
+          <label>Blur Miktarı <span class="val" id="vGlassBlur">16</span> px</label>
+          <input type="range" id="cGlassBlur" min="0" max="40" value="16">
+        </div>
+      </div>
+      <div id="bgNeonGroup" style="display:none">
+        <div class="cg">
+          <label>Neon Ana Rengi</label>
+          <div class="color-row">
+            <input type="color" id="cNeonColor" value="#53fc18">
+            <input type="text" class="color-hex" id="cNeonColorHex" value="#53fc18">
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title"><span class="st-icon">🟢</span> İkon Yuvası</div>
+      <div class="toggle-row">
+        <span>İkon Yuvası Degrade</span>
+        <label class="toggle-wrap"><input type="checkbox" id="cIconBgGradient"><span class="toggle-slider"></span></label>
+      </div>
+      <div class="cg" id="iconBgSolidGroup">
+        <label>İkon Arka Plan Rengi</label>
+        <div class="color-row">
+          <input type="color" id="cIconBgColor" value="#53fc18">
+          <input type="text" class="color-hex" id="cIconBgColorHex" value="#53fc18">
+        </div>
+      </div>
+      <div id="iconBgGradientGroup" style="display:none">
+        <div class="cg">
+          <label>Renk 1</label>
+          <div class="color-row">
+            <input type="color" id="cIconBgGrad1" value="#53fc18">
+            <input type="text" class="color-hex" id="cIconBgGrad1Hex" value="#53fc18">
+          </div>
+        </div>
+        <div class="cg">
+          <label>Renk 2</label>
+          <div class="color-row">
+            <input type="color" id="cIconBgGrad2" value="#00e5ff">
+            <input type="text" class="color-hex" id="cIconBgGrad2Hex" value="#00e5ff">
+          </div>
+        </div>
+      </div>
+      <div class="cg">
+        <label>İkon Rengi</label>
+        <div class="color-row">
+          <input type="color" id="cIconColor" value="#100c28">
+          <input type="text" class="color-hex" id="cIconColorHex" value="#100c28">
+        </div>
+      </div>
+
+      <div class="section-title"><span class="st-icon">✏️</span> Metin Renkleri</div>
+      <div class="cg">
+        <label>Başlık Rengi (YENİ TAKİPÇİ)</label>
+        <div class="color-row">
+          <input type="color" id="cLabelColor" value="#53fc18">
+          <input type="text" class="color-hex" id="cLabelColorHex" value="#53fc18">
+        </div>
+      </div>
+      <div class="cg">
+        <label>Kullanıcı Adı Rengi</label>
+        <div class="color-row">
+          <input type="color" id="cUsernameColor" value="#ffffff">
+          <input type="text" class="color-hex" id="cUsernameColorHex" value="#ffffff">
+        </div>
+      </div>
+      <div class="toggle-row">
+        <span>Kullanıcı Adı Degrade</span>
+        <label class="toggle-wrap"><input type="checkbox" id="cUsernameGradient"><span class="toggle-slider"></span></label>
+      </div>
+      <div id="usernameGradGroup" style="display:none">
+        <div class="cg">
+          <label>Degrade Renk 1</label>
+          <div class="color-row">
+            <input type="color" id="cUsernameGrad1" value="#53fc18">
+            <input type="text" class="color-hex" id="cUsernameGrad1Hex" value="#53fc18">
+          </div>
+        </div>
+        <div class="cg">
+          <label>Degrade Renk 2</label>
+          <div class="color-row">
+            <input type="color" id="cUsernameGrad2" value="#00e5ff">
+            <input type="text" class="color-hex" id="cUsernameGrad2Hex" value="#00e5ff">
+          </div>
+        </div>
+      </div>
+      <div class="cg">
+        <label>Platform Rozet Rengi</label>
+        <div class="color-row">
+          <input type="color" id="cPlatformColor" value="#53fc18">
+          <input type="text" class="color-hex" id="cPlatformColorHex" value="#53fc18">
+        </div>
+      </div>
+    </div>
+
+    <!-- ICON TAB -->
+    <div class="tab-panel" id="t-icon">
+      <div class="section-title"><span class="st-icon">🖼</span> İkon Seç</div>
+      <div class="icon-grid" id="iconGrid">
+        <!-- JS ile doldurulacak -->
+      </div>
+
+      <div class="section-title"><span class="st-icon">📦</span> İkon Boyutu ve Şekil</div>
+      <div class="cg">
+        <label>İkon Yuvası Boyutu <span class="val" id="vIconSize">50</span> px</label>
+        <input type="range" id="cIconSize" min="28" max="100" value="50">
+      </div>
+      <div class="cg">
+        <label>İkon Yuvası Şekli</label>
+        <select id="cIconShape">
+          <option value="circle">⚫ Yuvarlak</option>
+          <option value="rounded">◼ Yuvarlak Köşe</option>
+          <option value="square">■ Kare</option>
+          <option value="diamond">♦ Elmas</option>
+          <option value="none">🚫 Yuvasız</option>
+        </select>
+      </div>
+      <div class="cg">
+        <label>İkon Büyüklüğü <span class="val" id="vIconInnerSize">24</span> px</label>
+        <input type="range" id="cIconInnerSize" min="10" max="70" value="24">
+      </div>
+      <div class="cg">
+        <label>İkon Gölgesi <span class="val" id="vIconShadow">10</span> px</label>
+        <input type="range" id="cIconShadow" min="0" max="40" value="10">
+      </div>
+
+      <div class="section-title"><span class="st-icon">🎬</span> İkon Animasyonu</div>
+      <div class="cg">
+        <label>İkon Animasyonu</label>
+        <select id="cIconAnim">
+          <option value="ring">🔔 Zil Sallama</option>
+          <option value="heartbeat">❤️ Kalp Atışı</option>
+          <option value="pulse">⬤ Nabız</option>
+          <option value="spin">🔄 Dönme</option>
+          <option value="shake">〰 Sarsılma</option>
+          <option value="float">🎈 Süzülme</option>
+          <option value="none">✖ Yok</option>
+        </select>
+      </div>
+      <div class="cg">
+        <label>Animasyon Hızı <span class="val" id="vIconAnimSpeed">1.5</span> sn</label>
+        <input type="range" id="cIconAnimSpeed" min="0.3" max="5" step="0.1" value="1.5">
+      </div>
+
+      <div class="section-title"><span class="st-icon">✨</span> İkon Efektleri</div>
+      <div class="toggle-row">
+        <span>İkon Arkası Parıltı (Halo)</span>
+        <label class="toggle-wrap"><input type="checkbox" id="cIconHalo" checked><span class="toggle-slider"></span></label>
+      </div>
+      <div class="cg">
+        <label>Halo Rengi</label>
+        <div class="color-row">
+          <input type="color" id="cHaloColor" value="#53fc18">
+          <input type="text" class="color-hex" id="cHaloColorHex" value="#53fc18">
+        </div>
+      </div>
+      <div class="cg">
+        <label>Halo Yoğunluğu <span class="val" id="vHaloInt">40</span>%</label>
+        <input type="range" id="cHaloInt" min="0" max="100" value="40">
+      </div>
+    </div>
+
+    <!-- ANIMATION TAB -->
+    <div class="tab-panel" id="t-anim">
+      <div class="section-title"><span class="st-icon">▶️</span> Giriş Animasyonu</div>
+      <div class="anim-grid">
+        <div class="anim-btn active" onclick="selectEnterAnim('bounce',this)">⤵ Zıplama</div>
+        <div class="anim-btn" onclick="selectEnterAnim('slide',this)">⟶ Kayma</div>
+        <div class="anim-btn" onclick="selectEnterAnim('zoom',this)">⊕ Yakınlaşma</div>
+        <div class="anim-btn" onclick="selectEnterAnim('flip',this)">↻ Çevirme</div>
+      </div>
+
+      <div class="section-title"><span class="st-icon">◀️</span> Çıkış Animasyonu</div>
+      <div class="anim-grid">
+        <div class="anim-btn active" onclick="selectExitAnim('bounce',this)" data-exit>⤴ Zıplayarak</div>
+        <div class="anim-btn" onclick="selectExitAnim('slide',this)" data-exit>⟶ Kayarak</div>
+        <div class="anim-btn" onclick="selectExitAnim('zoom',this)" data-exit>⊖ Uzaklaşma</div>
+        <div class="anim-btn" onclick="selectExitAnim('drop',this)" data-exit>⤵ Düşme</div>
+      </div>
+
+      <div class="section-title"><span class="st-icon">⏱</span> Zamanlama</div>
+      <div class="cg">
+        <label>Giriş Süresi <span class="val" id="vEnterDur">600</span> ms</label>
+        <input type="range" id="cEnterDur" min="100" max="2000" step="50" value="600">
+      </div>
+      <div class="cg">
+        <label>Ekranda Kalma Süresi <span class="val" id="vDisplayDur">4000</span> ms</label>
+        <input type="range" id="cDisplayDur" min="1000" max="12000" step="500" value="4000">
+      </div>
+      <div class="cg">
+        <label>Çıkış Süresi <span class="val" id="vExitDur">500</span> ms</label>
+        <input type="range" id="cExitDur" min="100" max="2000" step="50" value="500">
+      </div>
+      <div class="cg">
+        <label>Sıra Bekleme Gecikmesi <span class="val" id="vQueueDelay">200</span> ms</label>
+        <input type="range" id="cQueueDelay" min="0" max="2000" step="100" value="200">
+      </div>
+
+      <div class="section-title"><span class="st-icon">🔤</span> Yazı Animasyonu</div>
+      <div class="cg">
+        <label>Kullanıcı Adı Efekti</label>
+        <select id="cTextEffect">
+          <option value="none">Yok</option>
+          <option value="typewriter">⌨ Daktilo</option>
+          <option value="fadeup">⬆ Yukarı Çıkma</option>
+          <option value="shimmer">✨ Parıltılı</option>
+          <option value="countup">🔢 Sayı Sayma</option>
+        </select>
+      </div>
+
+      <div class="section-title"><span class="st-icon">🎊</span> Kutlama Efekti</div>
+      <div class="cg">
+        <label>Kutlama Tipi</label>
+        <select id="cCelebration">
+          <option value="none">Yok</option>
+          <option value="particles">✨ Partikül Patlaması</option>
+          <option value="confetti">🎊 Konfeti</option>
+          <option value="sparkles">⭐ Kıvılcımlar</option>
+        </select>
+      </div>
+      <div class="cg">
+        <label>Kutlama Parçacık Sayısı <span class="val" id="vCelebCount">20</span></label>
+        <input type="range" id="cCelebCount" min="5" max="60" value="20">
+      </div>
+    </div>
+
+    <!-- TEXT TAB -->
+    <div class="tab-panel" id="t-text">
+      <div class="section-title"><span class="st-icon">🏷</span> Başlık Yazısı</div>
+      <div class="cg">
+        <label>Başlık İçeriği</label>
+        <input type="text" id="cLabelText" value="YENİ TAKİPÇİ" maxlength="30">
+      </div>
+      <div class="toggle-row">
+        <span>Başlığı Göster</span>
+        <label class="toggle-wrap"><input type="checkbox" id="cShowLabel" checked><span class="toggle-slider"></span></label>
+      </div>
+      <div class="cg">
+        <label>Başlık Font Boyutu <span class="val" id="vLabelSize">12</span> px</label>
+        <input type="range" id="cLabelSize" min="8" max="32" value="12">
+      </div>
+      <div class="cg">
+        <label>Harf Aralığı <span class="val" id="vLabelSpacing">1.5</span> px</label>
+        <input type="range" id="cLabelSpacing" min="0" max="12" step="0.5" value="1.5">
+      </div>
+      <div class="cg">
+        <label>Yazı Tipi</label>
+        <select id="cLabelFont">
+          <option value="'Syne', sans-serif">Syne (Varsayılan)</option>
+          <option value="'DM Sans', sans-serif">DM Sans</option>
+          <option value="'Space Mono', monospace">Space Mono</option>
+          <option value="'Arial Black', sans-serif">Arial Black</option>
+          <option value="'Georgia', serif">Georgia</option>
+          <option value="'Impact', sans-serif">Impact</option>
+        </select>
+      </div>
+      <div class="cg">
+        <label>Yazı Ağırlığı</label>
+        <select id="cLabelWeight">
+          <option value="400">Normal</option>
+          <option value="600">Semi Bold</option>
+          <option value="700">Bold</option>
+          <option value="800" selected>Extra Bold</option>
+          <option value="900">Black</option>
+        </select>
+      </div>
+
+      <div class="section-title"><span class="st-icon">👤</span> Kullanıcı Adı</div>
+      <div class="cg">
+        <label>Öneki (Prefix)</label>
+        <input type="text" id="cUsernamePrefix" placeholder="örn: @  veya boş">
+      </div>
+      <div class="cg">
+        <label>Soneki (Suffix)</label>
+        <input type="text" id="cUsernameSuffix" placeholder="örn: takip etti veya boş">
+      </div>
+      <div class="cg">
+        <label>Kullanıcı Adı Font Boyutu <span class="val" id="vUsernameSize">22</span> px</label>
+        <input type="range" id="cUsernameSize" min="10" max="60" value="22">
+      </div>
+      <div class="cg">
+        <label>Yazı Tipi</label>
+        <select id="cUsernameFont">
+          <option value="'Syne', sans-serif">Syne</option>
+          <option value="'DM Sans', sans-serif" selected>DM Sans</option>
+          <option value="'Space Mono', monospace">Space Mono</option>
+          <option value="'Arial Black', sans-serif">Arial Black</option>
+          <option value="'Impact', sans-serif">Impact</option>
+        </select>
+      </div>
+      <div class="cg">
+        <label>Yazı Ağırlığı</label>
+        <select id="cUsernameWeight">
+          <option value="400">Normal</option>
+          <option value="600">Semi Bold</option>
+          <option value="700" selected>Bold</option>
+          <option value="800">Extra Bold</option>
+          <option value="900">Black</option>
+        </select>
+      </div>
+      <div class="cg">
+        <label>Metin Gölgesi <span class="val" id="vTextShadow">3</span> px</label>
+        <input type="range" id="cTextShadow" min="0" max="20" value="3">
+      </div>
+    </div>
+
+    <!-- FX TAB -->
+    <div class="tab-panel" id="t-fx">
+      <div class="section-title"><span class="st-icon">💫</span> Işıma (Glow)</div>
+      <div class="toggle-row">
+        <span>Dış Glow Efekti</span>
+        <label class="toggle-wrap"><input type="checkbox" id="cOuterGlow" checked><span class="toggle-slider"></span></label>
+      </div>
+      <div class="cg">
+        <label>Glow Rengi</label>
+        <div class="color-row">
+          <input type="color" id="cGlowColor" value="#53fc18">
+          <input type="text" class="color-hex" id="cGlowColorHex" value="#53fc18">
+        </div>
+      </div>
+      <div class="cg">
+        <label>Glow Yoğunluğu <span class="val" id="vGlowInt">25</span>%</label>
+        <input type="range" id="cGlowInt" min="0" max="100" value="25">
+      </div>
+      <div class="cg">
+        <label>Glow Yayılma <span class="val" id="vGlowSpread">20</span> px</label>
+        <input type="range" id="cGlowSpread" min="0" max="60" value="20">
+      </div>
+      <div class="toggle-row">
+        <span>Nabız Glow (Animasyonlu)</span>
+        <label class="toggle-wrap"><input type="checkbox" id="cGlowPulse"><span class="toggle-slider"></span></label>
+      </div>
+
+      <div class="section-title"><span class="st-icon">🌈</span> Kenarlık Efekti</div>
+      <div class="cg">
+        <label>Kenarlık Efekti</label>
+        <select id="cBorderFx">
+          <option value="none">Yok</option>
+          <option value="glow">Işıyan Kenarlık</option>
+          <option value="animated">Hareketli Degrade</option>
+          <option value="rainbow">Gökkuşağı</option>
+        </select>
+      </div>
+
+      <div class="section-title"><span class="st-icon">🎆</span> Partikül Sistemi</div>
+      <div class="cg">
+        <label>Arka Plan Partikül Sayısı <span class="val" id="vBgPartCount">0</span></label>
+        <input type="range" id="cBgPartCount" min="0" max="40" value="0">
+      </div>
+      <div class="cg">
+        <label>Partikül Rengi</label>
+        <div class="color-row">
+          <input type="color" id="cBgPartColor" value="#53fc18">
+          <input type="text" class="color-hex" id="cBgPartColorHex" value="#53fc18">
+        </div>
+      </div>
+      <div class="cg">
+        <label>Partikül Boyutu <span class="val" id="vBgPartSize">2</span> px</label>
+        <input type="range" id="cBgPartSize" min="0.5" max="6" step="0.5" value="2">
+      </div>
+      <div class="cg">
+        <label>Partikül Hareketi</label>
+        <select id="cBgPartMode">
+          <option value="float">Süzülme</option>
+          <option value="sparkle">Kıvılcım</option>
+          <option value="orbit">Yörünge</option>
+        </select>
+      </div>
+
+      <div class="section-title"><span class="st-icon">🌟</span> Yansıma ve Derinlik</div>
+      <div class="toggle-row">
+        <span>Üst Yansıma Şeridi</span>
+        <label class="toggle-wrap"><input type="checkbox" id="cReflection" checked><span class="toggle-slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <span>İçe Gölge (Inner Shadow)</span>
+        <label class="toggle-wrap"><input type="checkbox" id="cInnerShadow" checked><span class="toggle-slider"></span></label>
+      </div>
+      <div class="cg">
+        <label>Dış Gölge Derinliği <span class="val" id="vDropShadow">25</span> px</label>
+        <input type="range" id="cDropShadow" min="0" max="60" value="25">
+      </div>
+      <div class="cg">
+        <label>Backdrop Blur <span class="val" id="vBdBlur">16</span> px</label>
+        <input type="range" id="cBdBlur" min="0" max="40" value="16">
+      </div>
+    </div>
+
+  </div><!-- end tab-panels -->
+
+  <div class="status-bar">
+    <div class="status-item"><div class="status-dot"></div><span>Canlı</span></div>
+    <div class="status-item" id="statusSize">420×72</div>
+    <div class="status-item">Anim: <span class="accent" id="statusAnim">bounce</span></div>
+  </div>
+</div>
+
+<!-- PREVIEW AREA -->
+<div class="preview-area" id="previewArea">
+  <div class="bg-switcher">
+    <div class="bg-swatch active" style="background:#090912;" data-bg="#090912"></div>
+    <div class="bg-swatch" style="background:#0a1628;" data-bg="#0a1628"></div>
+    <div class="bg-swatch" style="background:#1a0a2e;" data-bg="#1a0a2e"></div>
+    <div class="bg-swatch" style="background:#0a2010;" data-bg="#0a2010"></div>
+    <div class="bg-swatch" style="background:#fff;" data-bg="#fff"></div>
+    <div class="bg-swatch" style="background:linear-gradient(135deg,#1a1a2e,#16213e);" data-bg="g1"></div>
+    <div class="bg-swatch" style="background:linear-gradient(135deg,#0f3443,#34e89e);" data-bg="g2"></div>
+  </div>
+
+  <div class="preview-controls">
+    <button class="preview-ctrl-btn" onclick="changeZoom(-0.15)" title="Küçült">−</button>
+    <button class="preview-ctrl-btn" onclick="changeZoom(0)" title="Sıfırla">⟳</button>
+    <button class="preview-ctrl-btn" onclick="changeZoom(0.15)" title="Büyüt">+</button>
+  </div>
+
+  <div class="widget-canvas" id="widgetCanvas">
+    <div id="follower-alert-preview">
+      <div class="fa-glow-ring" id="faGlowRing"></div>
+      <div class="fa-icon-wrap" id="faIconWrap">
+        <div class="fa-particle-container" id="faParticleContainer"></div>
+      </div>
+      <div class="fa-texts" id="faTexts">
+        <div class="fa-label" id="faLabel">YENİ TAKİPÇİ</div>
+        <div class="fa-username" id="faUsername">KullanıcıAdı</div>
+      </div>
+      <div class="fa-platform-badge" id="faPlatformBadge">KICK</div>
+    </div>
+  </div>
+
+  <div class="test-area">
+    <input type="text" class="test-btn-name" id="testName" value="SüperOyuncu" placeholder="Test kullanıcı adı...">
+    <button class="test-btn test-btn-trigger" onclick="triggerPreview()">▶ Test Et</button>
+  </div>
+</div>
+
+<!-- RIGHT PANEL -->
+<div class="sidebar right">
+  <div class="sidebar-header">
+    <h1>
+      <div class="logo-badge" style="background:linear-gradient(135deg,var(--accent2),#ff8c00)">💾</div>
+      Tasarımlarım
+    </h1>
+  </div>
+  <div class="right-panel-content">
+    <div class="preset-save-area">
+      <input type="text" id="presetName" placeholder="Tasarım adı...">
+      <button class="btn btn-primary" onclick="savePreset()">💾 Kaydet</button>
+    </div>
+    <div class="divider"></div>
+    <div class="preset-cards" id="presetCards">
+      <div class="empty-state" id="emptyState">
+        <div class="icon">🎨</div>
+        <div>Henüz kayıtlı tasarım yok.</div>
+      </div>
+    </div>
+
+    <div class="io-section">
+      <h2>Dışa Aktar</h2>
+      <button class="btn btn-primary" onclick="exportForOBS()">📺 OBS Widget Dosyası</button>
+      <button class="btn btn-secondary" onclick="exportJSON()">📤 JSON Ayarları</button>
+      <p class="tip">OBS dışa aktarımı Kick/Twitch widget olarak kullanılabilir tek HTML dosyası üretir.</p>
+      <div class="divider"></div>
+      <h2>JSON İçe / Dışa Aktar</h2>
+      <textarea id="jsonIO" placeholder="JSON kodunu buraya yapıştırın..."></textarea>
+      <button class="btn btn-green" onclick="importJSON()">📥 JSON'dan İçe Al</button>
+      <div class="divider"></div>
+      <h2>Araçlar</h2>
+      <button class="btn btn-secondary" onclick="copyCSSCode()">📋 CSS'yi Kopyala</button>
+      <button class="btn btn-danger" onclick="resetToDefault()">⚠ Varsayılana Dön</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── ICONS ───
+const ICONS = [
+  { id:'bell', label:'Zil', svg:`<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>` },
+  { id:'heart', label:'Kalp', svg:`<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>` },
+  { id:'star', label:'Yıldız', svg:`<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>` },
+  { id:'person_add', label:'Takip', svg:`<svg viewBox="0 0 24 24" fill="currentColor"><path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V8H4v2H2v2h2v2h2v-2h2v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>` },
+  { id:'bolt', label:'Şimşek', svg:`<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 2v11h3v9l7-12h-4l4-8z"/></svg>` },
+  { id:'fire', label:'Ateş', svg:`<svg viewBox="0 0 24 24" fill="currentColor"><path d="M13.5 0.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 3.8 13.5 0.67zM11.71 19c-1.78 0-3.22-1.4-3.22-3.14 0-1.62 1.05-2.76 2.81-3.12 1.77-.36 3.6-1.21 4.62-2.58.39 1.29.59 2.65.59 4.04 0 2.65-2.15 4.8-4.8 4.8z"/></svg>` },
+  { id:'crown', label:'Taç', svg:`<svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z"/></svg>` },
+  { id:'rocket', label:'Roket', svg:`<svg viewBox="0 0 24 24" fill="currentColor"><path d="M9.19 6.35c-2.04 2.29-3.44 5.58-3.57 5.89L2 10l4.05-4.05c.47-.47 1.15-.68 1.81-.55l1.33.95zm12.26-3.8a1.05 1.05 0 0 0-.73-.73C18.08 1.18 13.41 2.12 10 5.53c-.66.66-1.23 1.38-1.74 2.12l3.08 3.08a17.45 17.45 0 0 1 2.12-1.74c3.41-3.41 4.35-8.08 3.71-10.72zM13.65 14.81c-2.31 2.04-5.6 3.44-5.91 3.57L10 22l4.05-4.05c.47-.47.68-1.15.55-1.81l-.95-1.33zm-6.22.44l1.06 1.06-4.22 4.22-1.06-1.06 4.22-4.22z"/></svg>` },
+  { id:'diamond', label:'Elmas', svg:`<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5L2 9l10 12L22 9l-3-6zM5.82 9l1.38-4h9.6l1.38 4H5.82zM12 18.5L5.1 11h13.8L12 18.5z"/></svg>` },
+  { id:'gift', label:'Hediye', svg:`<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 6h-2.18c.07-.23.18-.46.18-.72 0-1.25-1.12-2.28-2.5-2.28-1.24 0-1.91.63-2.5 1.39C12.59 3.63 11.92 3 10.5 3 9.12 3 8 4.03 8 5.28c0 .26.11.49.18.72H6c-1.1 0-2 .9-2 2v2c0 .55.45 1 1 1h15c.55 0 1-.45 1-1V8c0-1.1-.9-2-2-2zm-7 0c.51-.63.88-1 1.5-1s1 .39 1 .78-.45.22-1 .22H13zm-4.5 0c.55 0 1-.06 1-.22 0-.39.43-.78 1-.78.62 0 .99.37 1.5 1H8.5zM6 20c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2v-9H6v9zm7-6h-2v-2h2v2zm0 4h-2v-2h2v2zm4-4h-2v-2h2v2zm0 4h-2v-2h2v2zm-8-4H7v-2h2v2zm0 4H7v-2h2v2z"/></svg>` },
+];
+
+const PLATFORM_PRESETS = {
+  kick: { label: 'KICK', color: '#53fc18', textColor: '#000' },
+  twitch: { label: 'TWITCH', color: '#9146ff', textColor: '#fff' },
+  youtube: { label: 'YOUTUBE', color: '#ff0000', textColor: '#fff' },
+  tiktok: { label: 'TIKTOK', color: '#ff0050', textColor: '#fff' },
+  instagram: { label: 'INSTAGRAM', color: '#e1306c', textColor: '#fff' },
+  custom: { label: 'LIVE', color: '#00e5ff', textColor: '#000' },
+};
+
+// ─── DEFAULT STATE ───
+const DEFAULT_STATE = {
+  width: 420, height: 72, radius: 36, padH: 18, gap: 14,
+  borderW: 2, borderColor: '#53fc18', borderOp: 100, borderStyle: 'solid',
+  bgType: 'glassmorphism',
+  bgSolid: '#100c28', bgSolidOp: 95,
+  bgGrad1: '#100c28', bgGrad2: '#1a0a3a', bgGradAngle: 135, bgGradOp: 95,
+  glassColor: '#100c28', glassOp: 90, glassBlur: 16,
+  neonColor: '#53fc18',
+  iconBgGradient: false, iconBgColor: '#53fc18', iconBgGrad1: '#53fc18', iconBgGrad2: '#00e5ff',
+  iconColor: '#100c28',
+  labelColor: '#53fc18', usernameColor: '#ffffff',
+  usernameGradient: false, usernameGrad1: '#53fc18', usernameGrad2: '#00e5ff',
+  platformColor: '#53fc18',
+  selectedIcon: 'bell',
+  iconSize: 50, iconShape: 'circle', iconInnerSize: 24, iconShadow: 10,
+  iconAnim: 'ring', iconAnimSpeed: 1.5,
+  iconHalo: true, haloColor: '#53fc18', haloInt: 40,
+  enterAnim: 'bounce', exitAnim: 'bounce',
+  enterDur: 600, displayDur: 4000, exitDur: 500, queueDelay: 200,
+  textEffect: 'none', celebration: 'none', celebCount: 20,
+  labelText: 'YENİ TAKİPÇİ', showLabel: true,
+  labelSize: 12, labelSpacing: 1.5, labelFont: "'Syne', sans-serif", labelWeight: '800',
+  usernamePrefix: '', usernameSuffix: '',
+  usernameSize: 22, usernameFont: "'DM Sans', sans-serif", usernameWeight: '700',
+  textShadow: 3,
+  showPlatform: false, platform: 'kick', customPlatform: 'LIVE', platformPos: 'top-right',
+  outerGlow: true, glowColor: '#53fc18', glowInt: 25, glowSpread: 20, glowPulse: false,
+  borderFx: 'none',
+  bgPartCount: 0, bgPartColor: '#53fc18', bgPartSize: 2, bgPartMode: 'float',
+  reflection: true, innerShadow: true, dropShadow: 25, bdBlur: 16,
+};
+
+let state = deepClone(DEFAULT_STATE);
+let presets = JSON.parse(localStorage.getItem('followerPresetsV1') || '{}');
+let zoomLevel = 1;
+let isPreviewAnimating = false;
+let bgParticleAnimFrame = null;
+let bgParticles = [];
+
+function deepClone(o) { return JSON.parse(JSON.stringify(o)); }
+
+// ─── ICON GRID ───
+function buildIconGrid() {
+  const grid = document.getElementById('iconGrid');
+  ICONS.forEach(icon => {
+    const btn = document.createElement('div');
+    btn.className = 'icon-btn' + (icon.id === state.selectedIcon ? ' active' : '');
+    btn.title = icon.label;
+    btn.innerHTML = icon.svg;
+    btn.querySelector('svg').style.fill = 'currentColor';
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.icon-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      state.selectedIcon = icon.id;
+      updateWidget();
+    });
+    grid.appendChild(btn);
+  });
+}
+
+// ─── COMPUTE BACKGROUND ───
+function computeBg() {
+  const s = state;
+  switch(s.bgType) {
+    case 'solid': {
+      const rgb = hexToRgb(s.bgSolid);
+      return `rgba(${rgb},${s.bgSolidOp/100})`;
+    }
+    case 'gradient': {
+      const rgb1 = hexToRgb(s.bgGrad1);
+      const rgb2 = hexToRgb(s.bgGrad2);
+      const op = s.bgGradOp/100;
+      return `linear-gradient(${s.bgGradAngle}deg, rgba(${rgb1},${op}), rgba(${rgb2},${op}))`;
+    }
+    case 'glassmorphism': {
+      const rgb = hexToRgb(s.glassColor);
+      return `rgba(${rgb},${s.glassOp/100})`;
+    }
+    case 'neon': {
+      const rgb = hexToRgb(s.neonColor);
+      return `rgba(5,5,12,0.94)`;
+    }
+    default: return 'rgba(16,12,40,0.93)';
+  }
+}
+
+function computeBorderStyle() {
+  const s = state;
+  const rgb = hexToRgb(s.borderColor);
+  const op = s.borderOp/100;
+  if(s.borderStyle === 'gradient') {
+    return { border: 'none', outline: `${s.borderW}px solid rgba(${rgb},${op})` };
+  }
+  return { border: `${s.borderW}px ${s.borderStyle} rgba(${rgb},${op})`, outline: 'none' };
+}
+
+// ─── UPDATE WIDGET ───
+function updateWidget() {
+  const s = state;
+  const alert = document.getElementById('follower-alert-preview');
+  const iconWrap = document.getElementById('faIconWrap');
+  const faLabel = document.getElementById('faLabel');
+  const faUsername = document.getElementById('faUsername');
+  const faPlatformBadge = document.getElementById('faPlatformBadge');
+  const faGlowRing = document.getElementById('faGlowRing');
+  const faTexts = document.getElementById('faTexts');
+
+  // Dimensions
+  alert.style.width = s.width + 'px';
+  alert.style.minHeight = s.height + 'px';
+  alert.style.borderRadius = s.radius + 'px';
+  alert.style.padding = `8px ${s.padH}px`;
+  alert.style.gap = s.gap + 'px';
+
+  // Background
+  const bg = computeBg();
+  alert.style.background = bg;
+  const blur = s.bgType === 'glassmorphism' ? s.glassBlur : s.bdBlur;
+  alert.style.backdropFilter = `blur(${blur}px)`;
+  alert.style.webkitBackdropFilter = `blur(${blur}px)`;
+
+  // Border
+  const bStyle = computeBorderStyle();
+  alert.style.border = bStyle.border;
+  alert.style.outline = bStyle.outline;
+
+  // Border FX
+  if(s.borderFx === 'animated' || s.borderFx === 'rainbow') {
+    alert.style.border = 'none';
+    alert.style.outline = 'none';
+    alert.style.backgroundImage = ''; // will be set below with position relative trick
+  }
+
+  // Drop shadow + glow
+  let shadows = [`0 ${s.dropShadow/2}px ${s.dropShadow}px rgba(0,0,0,0.5)`];
+  if(s.outerGlow) {
+    const gRgb = hexToRgb(s.glowColor);
+    shadows.push(`0 0 ${s.glowSpread}px rgba(${gRgb},${s.glowInt/100})`);
+    shadows.push(`0 0 ${s.glowSpread*2}px rgba(${gRgb},${s.glowInt/200})`);
+  }
+  if(s.innerShadow) {
+    shadows.push('inset 0 2px 8px rgba(255,255,255,0.04)');
+  }
+  alert.style.boxShadow = shadows.join(', ');
+
+  // Glow pulse
+  faGlowRing.style.display = (s.outerGlow && s.glowPulse) ? 'block' : 'none';
+  if(s.outerGlow && s.glowPulse) {
+    const gRgb = hexToRgb(s.glowColor);
+    faGlowRing.style.background = `transparent`;
+    faGlowRing.style.boxShadow = `0 0 ${s.glowSpread}px rgba(${gRgb},${s.glowInt/100})`;
+    faGlowRing.style.animation = `fa-glow-pulse 2s ease-in-out infinite`;
+    faGlowRing.style.borderRadius = s.radius + 'px';
+    faGlowRing.style.opacity = '1';
+  }
+
+  // Reflection
+  let existing = alert.querySelector('.fa-reflection');
+  if(existing) existing.remove();
+  if(s.reflection) {
+    const ref = document.createElement('div');
+    ref.className = 'fa-reflection';
+    ref.style.cssText = `position:absolute;top:0;left:0;width:100%;height:50%;background:linear-gradient(to bottom,rgba(255,255,255,0.05),transparent);border-radius:${s.radius}px;pointer-events:none;z-index:30;`;
+    alert.appendChild(ref);
+  }
+
+  // Icon wrap
+  const iconSz = s.iconSize;
+  iconWrap.style.width = iconSz + 'px';
+  iconWrap.style.height = iconSz + 'px';
+  iconWrap.style.flexShrink = '0';
+  iconWrap.style.position = 'relative';
+  iconWrap.style.zIndex = '5';
+
+  // Icon shape
+  const iconShapeMap = { circle: '50%', rounded: '30%', square: '8px', diamond: '0', none: '0' };
+  let iconBgStr = '';
+  if(s.iconShape !== 'none') {
+    if(s.iconBgGradient) {
+      iconBgStr = `linear-gradient(135deg, ${s.iconBgGrad1}, ${s.iconBgGrad2})`;
+    } else {
+      iconBgStr = s.iconBgColor;
+    }
+  }
+  iconWrap.style.background = iconBgStr;
+  iconWrap.style.borderRadius = iconShapeMap[s.iconShape] || '50%';
+  if(s.iconShape === 'diamond') {
+    iconWrap.style.transform = 'rotate(45deg)';
+    iconWrap.style.borderRadius = '4px';
+  } else {
+    iconWrap.style.transform = '';
+  }
+
+  // Icon halo
+  let iconShadows = [];
+  if(s.iconHalo && s.iconShape !== 'none') {
+    const hRgb = hexToRgb(s.haloColor);
+    iconShadows.push(`0 0 ${s.iconShadow}px rgba(${hRgb},${s.haloInt/100})`);
+    iconShadows.push(`0 0 ${s.iconShadow*2}px rgba(${hRgb},${s.haloInt/200})`);
+  }
+  iconWrap.style.boxShadow = iconShadows.join(', ');
+
+  // Icon inner content
+  const iconData = ICONS.find(ic => ic.id === s.selectedIcon) || ICONS[0];
+  // Remove old icon
+  let oldIcon = iconWrap.querySelector('.fa-icon-svg');
+  if(oldIcon) oldIcon.remove();
+  const iconEl = document.createElement('div');
+  iconEl.className = 'fa-icon-svg';
+  const innerSz = s.iconShape === 'diamond' ? s.iconInnerSize * 0.9 : s.iconInnerSize;
+  iconEl.style.cssText = `width:${innerSz}px;height:${innerSz}px;color:${s.iconColor};display:flex;align-items:center;justify-content:center;position:relative;z-index:1;`;
+  if(s.iconShape === 'diamond') iconEl.style.transform = 'rotate(-45deg)';
+  iconEl.innerHTML = iconData.svg;
+  const svgEl = iconEl.querySelector('svg');
+  if(svgEl) { svgEl.style.width = '100%'; svgEl.style.height = '100%'; svgEl.style.fill = s.iconColor; }
+
+  // Icon animation
+  const animMap = { ring: 'fa-ring', heartbeat: 'fa-heartbeat', pulse: 'fa-pulse-icon', spin: 'fa-spin', shake: 'fa-shake', float: 'fa-float', none: '' };
+  const animName = animMap[s.iconAnim] || '';
+  if(animName) {
+    iconEl.style.animation = `${animName} ${s.iconAnimSpeed}s ease-in-out infinite`;
+  } else {
+    iconEl.style.animation = '';
+  }
+
+  iconWrap.style.display = 'flex';
+  iconWrap.style.alignItems = 'center';
+  iconWrap.style.justifyContent = 'center';
+  iconWrap.insertBefore(iconEl, iconWrap.querySelector('.fa-particle-container'));
+
+  // Texts
+  faTexts.style.flexDirection = 'column';
+  faTexts.style.justifyContent = 'center';
+
+  // Label
+  faLabel.style.display = s.showLabel ? '' : 'none';
+  faLabel.textContent = s.labelText;
+  faLabel.style.color = s.labelColor;
+  faLabel.style.fontSize = s.labelSize + 'px';
+  faLabel.style.letterSpacing = s.labelSpacing + 'px';
+  faLabel.style.fontFamily = s.labelFont;
+  faLabel.style.fontWeight = s.labelWeight;
+
+  // Username
+  const prefix = s.usernamePrefix || '';
+  const suffix = s.usernameSuffix ? ' ' + s.usernameSuffix : '';
+  faUsername.style.fontSize = s.usernameSize + 'px';
+  faUsername.style.fontFamily = s.usernameFont;
+  faUsername.style.fontWeight = s.usernameWeight;
+  if(s.textShadow > 0) {
+    faUsername.style.textShadow = `1px 1px ${s.textShadow}px rgba(0,0,0,0.8)`;
+  } else {
+    faUsername.style.textShadow = 'none';
+  }
+  if(s.usernameGradient) {
+    faUsername.style.background = `linear-gradient(90deg, ${s.usernameGrad1}, ${s.usernameGrad2})`;
+    faUsername.style.webkitBackgroundClip = 'text';
+    faUsername.style.webkitTextFillColor = 'transparent';
+    faUsername.style.backgroundClip = 'text';
+  } else {
+    faUsername.style.background = 'none';
+    faUsername.style.webkitBackgroundClip = '';
+    faUsername.style.webkitTextFillColor = '';
+    faUsername.style.backgroundClip = '';
+    faUsername.style.color = s.usernameColor;
+  }
+
+  // Platform badge
+  const platConf = PLATFORM_PRESETS[s.platform] || PLATFORM_PRESETS.kick;
+  const platLabel = s.platform === 'custom' ? (s.customPlatform || 'LIVE') : platConf.label;
+  faPlatformBadge.textContent = platLabel;
+  faPlatformBadge.style.display = s.showPlatform ? 'flex' : 'none';
+  faPlatformBadge.style.background = s.platformColor;
+  faPlatformBadge.style.color = '#000';
+  faPlatformBadge.style.padding = '2px 7px';
+  faPlatformBadge.style.borderRadius = '4px';
+  faPlatformBadge.style.fontSize = '9px';
+  faPlatformBadge.style.fontFamily = "'Syne', sans-serif";
+  faPlatformBadge.style.fontWeight = '800';
+  faPlatformBadge.style.letterSpacing = '0.5px';
+  // Position
+  const posMap = { 'top-right': {top:'-10px',right:'-4px',bottom:'',left:''}, 'top-left': {top:'-10px',right:'',bottom:'',left:'-4px'}, 'bottom-right': {top:'',right:'-4px',bottom:'-10px',left:''}, 'bottom-left': {top:'',right:'',bottom:'-10px',left:'-4px'} };
+  const posStyle = posMap[s.platformPos] || posMap['top-right'];
+  Object.assign(faPlatformBadge.style, posStyle);
+  alert.style.position = 'relative';
+
+  // Neon border FX
+  applyBorderFx();
+
+  // Status
+  document.getElementById('statusSize').textContent = `${s.width}×${s.height}`;
+  document.getElementById('statusAnim').textContent = s.enterAnim;
+
+  // BG particles
+  generateBgParticles();
+
+  localStorage.setItem('followerLastStateV1', JSON.stringify(state));
+}
+
+function applyBorderFx() {
+  const s = state;
+  const alert = document.getElementById('follower-alert-preview');
+  // Remove existing animated border wrapper
+  let ex = alert.querySelector('.fa-border-anim');
+  if(ex) ex.remove();
+
+  if(s.borderFx === 'glow') {
+    const rgb = hexToRgb(s.borderColor);
+    const op = s.borderOp/100;
+    alert.style.boxShadow += `, 0 0 0 ${s.borderW}px rgba(${rgb},${op}), 0 0 ${s.glowSpread}px rgba(${rgb},0.6)`;
+  } else if(s.borderFx === 'animated') {
+    const bw = s.borderW;
+    const old = alert.style.border;
+    alert.style.border = 'none';
+    alert.style.padding = `${8+bw}px ${s.padH+bw}px`;
+    alert.style.backgroundImage = `linear-gradient(${computeBg().includes('gradient') ? '' : '135deg, '}${s.bgGrad1||s.bgSolid||s.glassColor}, ${s.bgGrad2||s.bgSolid||s.glassColor})`;
+    alert.style.backgroundOrigin = 'border-box';
+    // pseudo via wrapper not feasible in plain DOM easily — fallback: outline
+    alert.style.outline = `${bw}px solid`;
+    alert.style.outlineColor = s.borderColor;
+    alert.style.outlineOffset = `-${bw}px`;
+    alert.style.animation = `fa-border-travel 3s ease infinite`;
+  } else if(s.borderFx === 'rainbow') {
+    alert.style.border = 'none';
+    alert.style.outline = `${s.borderW}px solid transparent`;
+    alert.style.backgroundImage = 'none';
+    alert.style.boxShadow += `, 0 0 0 ${s.borderW}px hsl(calc(var(--hue)*1deg), 100%, 60%)`;
+  }
+}
+
+// ─── BG PARTICLES ───
+function generateBgParticles() {
+  const container = document.getElementById('faParticleContainer');
+  if(bgParticleAnimFrame) { cancelAnimationFrame(bgParticleAnimFrame); bgParticleAnimFrame = null; }
+  container.innerHTML = '';
+  bgParticles = [];
+  const n = parseInt(state.bgPartCount);
+  if(n === 0) return;
+  const sz = parseFloat(state.bgPartSize);
+  const alert = document.getElementById('follower-alert-preview');
+  const pRgb = hexToRgb(state.bgPartColor);
+
+  for(let i = 0; i < n; i++) {
+    const p = document.createElement('div');
+    p.className = 'fa-particle';
+    const ps = (Math.random() * sz * 0.8 + sz * 0.4).toFixed(1);
+    const x = Math.random() * 100;
+    const y = Math.random() * 100;
+    p.style.width = ps + 'px';
+    p.style.height = ps + 'px';
+    p.style.left = x + '%';
+    p.style.top = y + '%';
+    p.style.background = `rgba(${pRgb}, ${(Math.random()*0.5+0.3).toFixed(2)})`;
+    p.style.position = 'absolute';
+    if(state.bgPartMode === 'float') {
+      const dur = (Math.random()*10+6).toFixed(1);
+      const del = (Math.random()*-15).toFixed(1);
+      p.style.animation = `fa-float ${dur}s ${del}s ease-in-out infinite`;
+    } else if(state.bgPartMode === 'sparkle') {
+      const dur = (Math.random()*2+0.8).toFixed(2);
+      const del = (Math.random()*-3).toFixed(2);
+      p.style.animation = `fa-sparkle ${dur}s ${del}s ease-in-out infinite`;
+    }
+    container.style.cssText = `position:absolute;inset:0;pointer-events:none;z-index:2;overflow:hidden;border-radius:inherit;`;
+    container.appendChild(p);
+    bgParticles.push({el:p, x, y, vx:(Math.random()-.5)*0.3, vy:(Math.random()-.5)*0.3});
+  }
+}
+
+// ─── TRIGGER PREVIEW ───
+function triggerPreview() {
+  if(isPreviewAnimating) return;
+  const name = document.getElementById('testName').value || 'KullanıcıAdı';
+  const faUsername = document.getElementById('faUsername');
+  const prefix = state.usernamePrefix || '';
+  const suffix = state.usernameSuffix ? ' ' + state.usernameSuffix : '';
+  faUsername.textContent = prefix + name + suffix;
+
+  const alert = document.getElementById('follower-alert-preview');
+  isPreviewAnimating = true;
+
+  // Apply text effect
+  applyTextEffect(faUsername);
+
+  // Celebration
+  triggerCelebration();
+
+  // Enter animation
+  const enterAnims = {
+    bounce: 'fa-bounce-in',
+    slide: 'fa-slide-in',
+    zoom: 'fa-zoom-in',
+    flip: 'fa-flip-in',
+  };
+  const enterAnim = enterAnims[state.enterAnim] || 'fa-bounce-in';
+  alert.style.animation = `${enterAnim} ${state.enterDur/1000}s cubic-bezier(0.34,1.56,0.64,1) forwards`;
+  alert.style.opacity = '1';
+
+  // Display timer
+  setTimeout(() => {
+    const exitAnims = {
+      bounce: 'fa-bounce-out',
+      slide: 'fa-slide-out',
+      zoom: 'fa-zoom-out',
+      drop: 'fa-drop-down',
+    };
+    const exitAnim = exitAnims[state.exitAnim] || 'fa-bounce-out';
+    alert.style.animation = `${exitAnim} ${state.exitDur/1000}s ease-in forwards`;
+    setTimeout(() => {
+      alert.style.animation = 'none';
+      alert.style.opacity = '0';
+      isPreviewAnimating = false;
+    }, state.exitDur + 100);
+  }, state.enterDur + state.displayDur);
+}
+
+function applyTextEffect(el) {
+  el.style.animation = '';
+  el.offsetHeight; // reflow
+  const effects = {
+    typewriter: `fa-typewriter ${state.enterDur/1000 + 0.5}s steps(20) forwards`,
+    fadeup: `fa-count-up 0.5s ease forwards`,
+    shimmer: `fa-shimmer-text 2s ease infinite`,
+    countup: `fa-count-up 0.6s ease forwards`,
+    none: '',
+  };
+  if(state.textEffect !== 'none') {
+    if(state.textEffect === 'shimmer') {
+      el.style.background = `linear-gradient(90deg, ${state.usernameGrad1||'#53fc18'} 0%, #fff 40%, ${state.usernameGrad2||'#00e5ff'} 60%, ${state.usernameGrad1||'#53fc18'} 100%)`;
+      el.style.backgroundSize = '200% 100%';
+      el.style.webkitBackgroundClip = 'text';
+      el.style.webkitTextFillColor = 'transparent';
+      el.style.backgroundClip = 'text';
+    }
+    el.style.animation = effects[state.textEffect] || '';
+  }
+}
+
+function triggerCelebration() {
+  const container = document.getElementById('faParticleContainer');
+  if(state.celebration === 'none') return;
+  const alert = document.getElementById('follower-alert-preview');
+  const rect = alert.getBoundingClientRect();
+  const n = parseInt(state.celebCount);
+  const celebLayer = document.createElement('div');
+  celebLayer.style.cssText = `position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999;overflow:hidden;`;
+  document.body.appendChild(celebLayer);
+
+  for(let i = 0; i < n; i++) {
+    const p = document.createElement('div');
+    const angle = (Math.random() * Math.PI * 2);
+    const dist = Math.random() * 120 + 40;
+    const px = Math.cos(angle) * dist;
+    const py = Math.sin(angle) * dist;
+    const sz = Math.random() * 8 + 4;
+    const colors = [state.borderColor, state.labelColor, '#fff', '#ffd700', state.glowColor];
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    const startX = rect.left + rect.width/2;
+    const startY = rect.top + rect.height/2;
+
+    p.style.cssText = `position:absolute;left:${startX}px;top:${startY}px;width:${sz}px;height:${sz}px;background:${color};border-radius:${state.celebration==='confetti'?'2px':'50%'};`;
+    if(state.celebration === 'sparkles') {
+      p.style.clipPath = 'polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%)';
+    }
+    p.style.setProperty('--px', px + 'px');
+    p.style.setProperty('--py', py + 'px');
+    p.style.animation = `fa-particle-burst ${Math.random()*0.5+0.4}s ease-out forwards`;
+    p.style.animationDelay = (Math.random() * 0.3) + 's';
+    celebLayer.appendChild(p);
+  }
+
+  setTimeout(() => { if(celebLayer.parentNode) celebLayer.parentNode.removeChild(celebLayer); }, 1500);
+}
+
+// ─── BIND HELPER ───
+function bind(id, prop, opts = {}) {
+  const el = document.getElementById(id);
+  if(!el) return;
+  const { label, isCheck, onChange, hexPair } = opts;
+  el.addEventListener('input', e => {
+    let val = isCheck ? e.target.checked : e.target.value;
+    if(!isCheck && !isNaN(val) && val !== '') val = parseFloat(val) || val;
+    state[prop] = val;
+    if(label) { const lEl = document.getElementById(label); if(lEl) lEl.textContent = Number.isInteger(+val) ? val : parseFloat(val).toFixed(1); }
+    if(hexPair) { const hEl = document.getElementById(hexPair); if(hEl) hEl.value = val; }
+    if(onChange) onChange(val); else updateWidget();
+  });
+  if(hexPair) {
+    const hEl = document.getElementById(hexPair);
+    if(hEl) hEl.addEventListener('input', e => {
+      let v = e.target.value;
+      if(v.startsWith('#') && (v.length===4||v.length===7)) { state[prop]=v; el.value=v; updateWidget(); }
+    });
+  }
+}
+
+// ─── BINDINGS ───
+bind('cWidth','width',{label:'vWidth'});
+bind('cHeight','height',{label:'vHeight'});
+bind('cRadius','radius',{label:'vRadius'});
+bind('cPadH','padH',{label:'vPadH'});
+bind('cGap','gap',{label:'vGap'});
+bind('cBorderW','borderW',{label:'vBorderW'});
+bind('cBorderColor','borderColor',{hexPair:'cBorderColorHex'});
+bind('cBorderOp','borderOp',{label:'vBorderOp'});
+bind('cBorderStyle','borderStyle');
+bind('cBgSolid','bgSolid',{hexPair:'cBgSolidHex'});
+bind('cBgSolidOp','bgSolidOp',{label:'vBgSolidOp'});
+bind('cBgGrad1','bgGrad1',{hexPair:'cBgGrad1Hex'});
+bind('cBgGrad2','bgGrad2',{hexPair:'cBgGrad2Hex'});
+bind('cBgGradAngle','bgGradAngle',{label:'vBgGradAngle'});
+bind('cBgGradOp','bgGradOp',{label:'vBgGradOp'});
+bind('cGlassColor','glassColor',{hexPair:'cGlassColorHex'});
+bind('cGlassOp','glassOp',{label:'vGlassOp'});
+bind('cGlassBlur','glassBlur',{label:'vGlassBlur'});
+bind('cNeonColor','neonColor',{hexPair:'cNeonColorHex'});
+bind('cIconBgGradient','iconBgGradient',{isCheck:true, onChange: v=>{
+  document.getElementById('iconBgSolidGroup').style.display = v?'none':'';
+  document.getElementById('iconBgGradientGroup').style.display = v?'':'none';
+  updateWidget();
+}});
+bind('cIconBgColor','iconBgColor',{hexPair:'cIconBgColorHex'});
+bind('cIconBgGrad1','iconBgGrad1',{hexPair:'cIconBgGrad1Hex'});
+bind('cIconBgGrad2','iconBgGrad2',{hexPair:'cIconBgGrad2Hex'});
+bind('cIconColor','iconColor',{hexPair:'cIconColorHex'});
+bind('cLabelColor','labelColor',{hexPair:'cLabelColorHex'});
+bind('cUsernameColor','usernameColor',{hexPair:'cUsernameColorHex'});
+bind('cUsernameGradient','usernameGradient',{isCheck:true, onChange: v=>{
+  document.getElementById('usernameGradGroup').style.display = v?'':'none';
+  updateWidget();
+}});
+bind('cUsernameGrad1','usernameGrad1',{hexPair:'cUsernameGrad1Hex'});
+bind('cUsernameGrad2','usernameGrad2',{hexPair:'cUsernameGrad2Hex'});
+bind('cPlatformColor','platformColor',{hexPair:'cPlatformColorHex'});
+bind('cIconSize','iconSize',{label:'vIconSize'});
+bind('cIconShape','iconShape');
+bind('cIconInnerSize','iconInnerSize',{label:'vIconInnerSize'});
+bind('cIconShadow','iconShadow',{label:'vIconShadow'});
+bind('cIconAnim','iconAnim');
+bind('cIconAnimSpeed','iconAnimSpeed',{label:'vIconAnimSpeed'});
+bind('cIconHalo','iconHalo',{isCheck:true});
+bind('cHaloColor','haloColor',{hexPair:'cHaloColorHex'});
+bind('cHaloInt','haloInt',{label:'vHaloInt'});
+bind('cEnterDur','enterDur',{label:'vEnterDur'});
+bind('cDisplayDur','displayDur',{label:'vDisplayDur'});
+bind('cExitDur','exitDur',{label:'vExitDur'});
+bind('cQueueDelay','queueDelay',{label:'vQueueDelay'});
+bind('cTextEffect','textEffect');
+bind('cCelebration','celebration');
+bind('cCelebCount','celebCount',{label:'vCelebCount'});
+bind('cLabelText','labelText');
+bind('cShowLabel','showLabel',{isCheck:true});
+bind('cLabelSize','labelSize',{label:'vLabelSize'});
+bind('cLabelSpacing','labelSpacing',{label:'vLabelSpacing'});
+bind('cLabelFont','labelFont');
+bind('cLabelWeight','labelWeight');
+bind('cUsernamePrefix','usernamePrefix');
+bind('cUsernameSuffix','usernameSuffix');
+bind('cUsernameSize','usernameSize',{label:'vUsernameSize'});
+bind('cUsernameFont','usernameFont');
+bind('cUsernameWeight','usernameWeight');
+bind('cTextShadow','textShadow',{label:'vTextShadow'});
+bind('cShowPlatform','showPlatform',{isCheck:true});
+bind('cCustomPlatform','customPlatform');
+bind('cPlatformPos','platformPos');
+bind('cOuterGlow','outerGlow',{isCheck:true});
+bind('cGlowColor','glowColor',{hexPair:'cGlowColorHex'});
+bind('cGlowInt','glowInt',{label:'vGlowInt'});
+bind('cGlowSpread','glowSpread',{label:'vGlowSpread'});
+bind('cGlowPulse','glowPulse',{isCheck:true});
+bind('cBorderFx','borderFx');
+bind('cBgPartCount','bgPartCount',{label:'vBgPartCount', onChange: v=>{state.bgPartCount=+v; generateBgParticles();}});
+bind('cBgPartColor','bgPartColor',{hexPair:'cBgPartColorHex', onChange: v=>{state.bgPartColor=v; generateBgParticles();}});
+bind('cBgPartSize','bgPartSize',{label:'vBgPartSize', onChange: v=>{state.bgPartSize=v; generateBgParticles();}});
+bind('cBgPartMode','bgPartMode',{onChange: v=>{state.bgPartMode=v; generateBgParticles();}});
+bind('cReflection','reflection',{isCheck:true});
+bind('cInnerShadow','innerShadow',{isCheck:true});
+bind('cDropShadow','dropShadow',{label:'vDropShadow'});
+bind('cBdBlur','bdBlur',{label:'vBdBlur'});
+
+// ─── BG TYPE CHANGE ───
+function onBgTypeChange(type) {
+  state.bgType = type;
+  document.getElementById('bgSolidGroup').style.display = type==='solid'?'':'none';
+  document.getElementById('bgGradientGroup').style.display = type==='gradient'?'':'none';
+  document.getElementById('bgGlassGroup').style.display = type==='glassmorphism'?'':'none';
+  document.getElementById('bgNeonGroup').style.display = type==='neon'?'':'none';
+  updateWidget();
+}
+// init bg type
+onBgTypeChange(state.bgType);
+document.getElementById('cBgType').addEventListener('change', e => onBgTypeChange(e.target.value));
+
+// ─── TABS ───
+document.getElementById('tab-nav').addEventListener('click', e => {
+  const btn = e.target.closest('.tab-btn');
+  if(!btn) return;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById(btn.dataset.tab).classList.add('active');
+});
+
+// ─── QUICK SHAPE ───
+function applyQuickShape(type, el) {
+  document.querySelectorAll('#t-shape .anim-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  const h = state.height;
+  if(type==='pill') state.radius = Math.round(h/2);
+  else if(type==='rounded') state.radius = Math.round(h*0.22);
+  else if(type==='square') state.radius = 4;
+  else if(type==='tag') state.radius = Math.round(h*0.15);
+  document.getElementById('cRadius').value = state.radius;
+  document.getElementById('vRadius').textContent = state.radius;
+  updateWidget();
+}
+
+// ─── ANIM PICKERS ───
+function selectEnterAnim(anim, el) {
+  document.querySelectorAll('#t-anim .anim-btn:not([data-exit])').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  state.enterAnim = anim;
+  document.getElementById('statusAnim').textContent = anim;
+  updateWidget();
+}
+function selectExitAnim(anim, el) {
+  document.querySelectorAll('#t-anim .anim-btn[data-exit]').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  state.exitAnim = anim;
+  updateWidget();
+}
+
+// ─── PLATFORM SELECT ───
+function selectPlatform(platform, el) {
+  document.querySelectorAll('.platform-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  state.platform = platform;
+  const conf = PLATFORM_PRESETS[platform];
+  if(conf) { state.platformColor = conf.color; document.getElementById('cPlatformColor').value = conf.color; document.getElementById('cPlatformColorHex').value = conf.color; }
+  document.getElementById('customPlatformGroup').style.display = platform==='custom'?'':'none';
+  updateWidget();
+}
+
+// ─── ZOOM ───
+function changeZoom(delta) {
+  if(delta===0) zoomLevel=1;
+  else zoomLevel = Math.max(0.3, Math.min(2.5, zoomLevel+delta));
+  document.getElementById('widgetCanvas').style.transform = `scale(${zoomLevel})`;
+}
+
+// ─── BG SWATCHES ───
+document.querySelectorAll('.bg-swatch').forEach(sw => {
+  sw.addEventListener('click', () => {
+    document.querySelectorAll('.bg-swatch').forEach(s => s.classList.remove('active'));
+    sw.classList.add('active');
+    const bg = sw.dataset.bg;
+    const pa = document.getElementById('previewArea');
+    if(bg==='g1') pa.style.background = 'linear-gradient(135deg,#1a1a2e,#16213e)';
+    else if(bg==='g2') pa.style.background = 'linear-gradient(135deg,#0f3443,#34e89e)';
+    else pa.style.background = bg;
+  });
+});
+
+// ─── PRESETS ───
+function savePreset() {
+  const nameInput = document.getElementById('presetName');
+  const name = nameInput.value.trim();
+  if(!name) { showToast('Lütfen bir isim girin!'); return; }
+  presets[name] = deepClone(state);
+  localStorage.setItem('followerPresetsV1', JSON.stringify(presets));
+  nameInput.value = '';
+  renderPresets();
+  showToast(`"${name}" kaydedildi!`);
+}
+
+function loadPreset(name) {
+  state = deepClone(presets[name]);
+  updateUIFromState();
+  showToast(`"${name}" yüklendi!`);
+}
+
+function deletePreset(name, e) {
+  e.stopPropagation();
+  if(!confirm(`"${name}" silinsin mi?`)) return;
+  delete presets[name];
+  localStorage.setItem('followerPresetsV1', JSON.stringify(presets));
+  renderPresets();
+  showToast('Silindi');
+}
+
+function renderPresets() {
+  const cards = document.getElementById('presetCards');
+  const empty = document.getElementById('emptyState');
+  const names = Object.keys(presets);
+  empty.style.display = names.length?'none':'';
+  [...cards.children].forEach(c => { if(!c.id) cards.removeChild(c); });
+  names.forEach(name => {
+    const ps = presets[name];
+    const card = document.createElement('div');
+    card.className = 'preset-card';
+    card.onclick = () => loadPreset(name);
+    const preview = document.createElement('div');
+    preview.className = 'preset-card-preview';
+    const miniAlert = document.createElement('div');
+    miniAlert.style.cssText = `display:flex;align-items:center;gap:6px;padding:0 10px;`;
+    const miniIcon = document.createElement('div');
+    miniIcon.style.cssText = `width:20px;height:20px;border-radius:50%;background:${ps.iconBgColor||'#53fc18'};flex-shrink:0;`;
+    const miniText = document.createElement('div');
+    miniText.style.cssText = `font-family:'Syne',sans-serif;font-size:10px;font-weight:800;color:${ps.labelColor||'#53fc18'};letter-spacing:1px;text-transform:uppercase;`;
+    miniText.textContent = ps.labelText || 'YENİ TAKİPÇİ';
+    miniAlert.appendChild(miniIcon);
+    miniAlert.appendChild(miniText);
+    preview.appendChild(miniAlert);
+    preview.style.background = '#06060e';
+    const info = document.createElement('div');
+    info.className = 'preset-card-info';
+    info.innerHTML = `<span class="preset-card-name">${name}</span><div class="preset-card-actions"><button class="preset-card-btn" onclick="loadPreset('${name}');event.stopPropagation()">↩</button><button class="preset-card-btn del" onclick="deletePreset('${name}',event)">✕</button></div>`;
+    card.appendChild(preview);
+    card.appendChild(info);
+    cards.appendChild(card);
+  });
+}
+
+// ─── UPDATE UI FROM STATE ───
+function updateUIFromState() {
+  const s = state;
+  const sv = (id,v) => { const el=document.getElementById(id); if(el) el.value=v; };
+  const sc = (id,v) => { const el=document.getElementById(id); if(el) el.checked=v; };
+  const sl = (id,v) => { const el=document.getElementById(id); if(el) el.textContent=Number.isInteger(+v)?v:parseFloat(v).toFixed(1); };
+
+  sv('cWidth',s.width); sl('vWidth',s.width);
+  sv('cHeight',s.height); sl('vHeight',s.height);
+  sv('cRadius',s.radius); sl('vRadius',s.radius);
+  sv('cPadH',s.padH); sl('vPadH',s.padH);
+  sv('cGap',s.gap); sl('vGap',s.gap);
+  sv('cBorderW',s.borderW); sl('vBorderW',s.borderW);
+  sv('cBorderColor',s.borderColor); sv('cBorderColorHex',s.borderColor);
+  sv('cBorderOp',s.borderOp); sl('vBorderOp',s.borderOp);
+  sv('cBorderStyle',s.borderStyle);
+  sv('cBgType',s.bgType);
+  onBgTypeChange(s.bgType);
+  sv('cBgSolid',s.bgSolid); sv('cBgSolidHex',s.bgSolid);
+  sv('cBgSolidOp',s.bgSolidOp); sl('vBgSolidOp',s.bgSolidOp);
+  sv('cBgGrad1',s.bgGrad1); sv('cBgGrad1Hex',s.bgGrad1);
+  sv('cBgGrad2',s.bgGrad2); sv('cBgGrad2Hex',s.bgGrad2);
+  sv('cBgGradAngle',s.bgGradAngle); sl('vBgGradAngle',s.bgGradAngle);
+  sv('cBgGradOp',s.bgGradOp); sl('vBgGradOp',s.bgGradOp);
+  sv('cGlassColor',s.glassColor); sv('cGlassColorHex',s.glassColor);
+  sv('cGlassOp',s.glassOp); sl('vGlassOp',s.glassOp);
+  sv('cGlassBlur',s.glassBlur); sl('vGlassBlur',s.glassBlur);
+  sv('cNeonColor',s.neonColor); sv('cNeonColorHex',s.neonColor);
+  sc('cIconBgGradient',s.iconBgGradient);
+  document.getElementById('iconBgSolidGroup').style.display = s.iconBgGradient?'none':'';
+  document.getElementById('iconBgGradientGroup').style.display = s.iconBgGradient?'':'none';
+  sv('cIconBgColor',s.iconBgColor); sv('cIconBgColorHex',s.iconBgColor);
+  sv('cIconBgGrad1',s.iconBgGrad1); sv('cIconBgGrad1Hex',s.iconBgGrad1);
+  sv('cIconBgGrad2',s.iconBgGrad2); sv('cIconBgGrad2Hex',s.iconBgGrad2);
+  sv('cIconColor',s.iconColor); sv('cIconColorHex',s.iconColor);
+  sv('cLabelColor',s.labelColor); sv('cLabelColorHex',s.labelColor);
+  sv('cUsernameColor',s.usernameColor); sv('cUsernameColorHex',s.usernameColor);
+  sc('cUsernameGradient',s.usernameGradient);
+  document.getElementById('usernameGradGroup').style.display = s.usernameGradient?'':'none';
+  sv('cUsernameGrad1',s.usernameGrad1); sv('cUsernameGrad1Hex',s.usernameGrad1);
+  sv('cUsernameGrad2',s.usernameGrad2); sv('cUsernameGrad2Hex',s.usernameGrad2);
+  sv('cPlatformColor',s.platformColor); sv('cPlatformColorHex',s.platformColor);
+  sv('cIconSize',s.iconSize); sl('vIconSize',s.iconSize);
+  sv('cIconShape',s.iconShape);
+  sv('cIconInnerSize',s.iconInnerSize); sl('vIconInnerSize',s.iconInnerSize);
+  sv('cIconShadow',s.iconShadow); sl('vIconShadow',s.iconShadow);
+  sv('cIconAnim',s.iconAnim);
+  sv('cIconAnimSpeed',s.iconAnimSpeed); sl('vIconAnimSpeed',s.iconAnimSpeed);
+  sc('cIconHalo',s.iconHalo);
+  sv('cHaloColor',s.haloColor); sv('cHaloColorHex',s.haloColor);
+  sv('cHaloInt',s.haloInt); sl('vHaloInt',s.haloInt);
+  sv('cEnterDur',s.enterDur); sl('vEnterDur',s.enterDur);
+  sv('cDisplayDur',s.displayDur); sl('vDisplayDur',s.displayDur);
+  sv('cExitDur',s.exitDur); sl('vExitDur',s.exitDur);
+  sv('cQueueDelay',s.queueDelay); sl('vQueueDelay',s.queueDelay);
+  sv('cTextEffect',s.textEffect);
+  sv('cCelebration',s.celebration);
+  sv('cCelebCount',s.celebCount); sl('vCelebCount',s.celebCount);
+  sv('cLabelText',s.labelText);
+  sc('cShowLabel',s.showLabel);
+  sv('cLabelSize',s.labelSize); sl('vLabelSize',s.labelSize);
+  sv('cLabelSpacing',s.labelSpacing); sl('vLabelSpacing',s.labelSpacing);
+  sv('cLabelFont',s.labelFont);
+  sv('cLabelWeight',s.labelWeight);
+  sv('cUsernamePrefix',s.usernamePrefix||'');
+  sv('cUsernameSuffix',s.usernameSuffix||'');
+  sv('cUsernameSize',s.usernameSize); sl('vUsernameSize',s.usernameSize);
+  sv('cUsernameFont',s.usernameFont);
+  sv('cUsernameWeight',s.usernameWeight);
+  sv('cTextShadow',s.textShadow); sl('vTextShadow',s.textShadow);
+  sc('cShowPlatform',s.showPlatform);
+  sv('cCustomPlatform',s.customPlatform||'LIVE');
+  sv('cPlatformPos',s.platformPos);
+  sc('cOuterGlow',s.outerGlow);
+  sv('cGlowColor',s.glowColor); sv('cGlowColorHex',s.glowColor);
+  sv('cGlowInt',s.glowInt); sl('vGlowInt',s.glowInt);
+  sv('cGlowSpread',s.glowSpread); sl('vGlowSpread',s.glowSpread);
+  sc('cGlowPulse',s.glowPulse);
+  sv('cBorderFx',s.borderFx);
+  sv('cBgPartCount',s.bgPartCount); sl('vBgPartCount',s.bgPartCount);
+  sv('cBgPartColor',s.bgPartColor); sv('cBgPartColorHex',s.bgPartColor);
+  sv('cBgPartSize',s.bgPartSize); sl('vBgPartSize',s.bgPartSize);
+  sv('cBgPartMode',s.bgPartMode);
+  sc('cReflection',s.reflection);
+  sc('cInnerShadow',s.innerShadow);
+  sv('cDropShadow',s.dropShadow); sl('vDropShadow',s.dropShadow);
+  sv('cBdBlur',s.bdBlur); sl('vBdBlur',s.bdBlur);
+  // icon grid sync
+  document.querySelectorAll('.icon-btn').forEach((btn,i) => { btn.classList.toggle('active', ICONS[i]?.id===s.selectedIcon); });
+  updateWidget();
+}
+
+// ─── EXPORT ───
+function exportJSON() {
+  const json = JSON.stringify({version:'1.0',type:'follower-alert',settings:state},null,2);
+  document.getElementById('jsonIO').value = json;
+  navigator.clipboard.writeText(json).catch(()=>{});
+  showToast('JSON panoya kopyalandı!');
+}
+
+function importJSON() {
+  try {
+    const parsed = JSON.parse(document.getElementById('jsonIO').value);
+    if(parsed.settings) { state=Object.assign(deepClone(DEFAULT_STATE),parsed.settings); updateUIFromState(); showToast('İçe aktarıldı!'); }
+    else showToast('Geçersiz format!');
+  } catch(e) { showToast('JSON hatası!'); }
+}
+
+function copyCSSCode() {
+  const s = state;
+  const rgb = hexToRgb(s.borderColor);
+  const op = s.borderOp/100;
+  const gRgb = hexToRgb(s.glassColor);
+  const css = `#follower-alert {
+  width: ${s.width}px;
+  min-height: ${s.height}px;
+  border-radius: ${s.radius}px;
+  background: rgba(${gRgb}, ${s.glassOp/100});
+  backdrop-filter: blur(${s.glassBlur}px);
+  border: ${s.borderW}px ${s.borderStyle} rgba(${rgb}, ${op});
+  padding: 8px ${s.padH}px;
+  gap: ${s.gap}px;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 0 ${s.glowSpread}px rgba(${hexToRgb(s.glowColor)}, ${s.glowInt/100});
+}`;
+  navigator.clipboard.writeText(css).catch(()=>{});
+  showToast('CSS kopyalandı!');
+}
+
+function exportForOBS() {
+  const s = state;
+  const iconData = ICONS.find(ic => ic.id === s.selectedIcon) || ICONS[0];
+  const gRgb = hexToRgb(s.glassColor);
+  const bRgb = hexToRgb(s.borderColor);
+  const bOp = s.borderOp/100;
+  const platConf = PLATFORM_PRESETS[s.platform]||PLATFORM_PRESETS.kick;
+  const platLabel = s.platform==='custom'?(s.customPlatform||'LIVE'):platConf.label;
+  const gGlowRgb = hexToRgb(s.glowColor);
+
+  let iconBg = s.iconBgGradient
+    ? `linear-gradient(135deg,${s.iconBgGrad1},${s.iconBgGrad2})`
+    : s.iconBgColor;
+  const iconShapeMap = {circle:'50%',rounded:'30%',square:'8px',diamond:'8px',none:'0'};
+  const iconBRadius = iconShapeMap[s.iconShape]||'50%';
+
+  const animMap = {ring:'fa-ring',heartbeat:'fa-heartbeat',pulse:'fa-pulse-icon',spin:'fa-spin',shake:'fa-shake',float:'fa-float',none:''};
+  const iconAnimName = animMap[s.iconAnim]||'';
+
+  let usernameCss = '';
+  if(s.usernameGradient) {
+    usernameCss = `background:linear-gradient(90deg,${s.usernameGrad1},${s.usernameGrad2});-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;`;
+  } else {
+    usernameCss = `color:${s.usernameColor};`;
+  }
+
+  const obsHTML = `<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{margin:0;overflow:hidden;background:transparent;font-family:${s.labelFont};}
+#follower-alert{
+  position:absolute;top:40px;left:50%;
+  display:flex;align-items:center;
+  gap:${s.gap}px;
+  padding:8px ${s.padH}px;
+  min-height:${s.height}px;
+  width:${s.width}px;
+  border-radius:${s.radius}px;
+  background:rgba(${gRgb},${s.glassOp/100});
+  backdrop-filter:blur(${s.glassBlur}px);
+  -webkit-backdrop-filter:blur(${s.glassBlur}px);
+  border:${s.borderW}px ${s.borderStyle} rgba(${bRgb},${bOp});
+  box-shadow:0 ${s.dropShadow/2}px ${s.dropShadow}px rgba(0,0,0,0.5)${s.outerGlow?`,0 0 ${s.glowSpread}px rgba(${gGlowRgb},${s.glowInt/100})`:''}${s.innerShadow?',inset 0 2px 8px rgba(255,255,255,0.04)':''};
+  white-space:nowrap;
+  transition:transform ${s.enterDur}ms,opacity ${s.enterDur}ms;
+}
+#follower-alert.hidden{transform:translate(-50%,-120px) scale(0.8);opacity:0;}
+#follower-alert.show{transform:translate(-50%,0) scale(1);opacity:1;}
+.icon-wrap{
+  width:${s.iconSize}px;height:${s.iconSize}px;
+  border-radius:${iconBRadius};
+  background:${iconBg};
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+  ${s.iconHalo?`box-shadow:0 0 ${s.iconShadow}px rgba(${hexToRgb(s.haloColor)},${s.haloInt/100});`:''}
+  ${s.iconShape==='diamond'?'transform:rotate(45deg);':''}
+}
+.icon-svg{
+  width:${s.iconInnerSize}px;height:${s.iconInnerSize}px;
+  color:${s.iconColor};
+  ${iconAnimName?`animation:${iconAnimName} ${s.iconAnimSpeed}s ease-in-out infinite;`:''}
+  ${s.iconShape==='diamond'?'transform:rotate(-45deg);':''}
+}
+.icon-svg svg{width:100%;height:100%;fill:${s.iconColor};}
+.texts{display:flex;flex-direction:column;justify-content:center;}
+.alert-label{
+  color:${s.labelColor};
+  font-size:${s.labelSize}px;
+  letter-spacing:${s.labelSpacing}px;
+  font-weight:${s.labelWeight};
+  font-family:${s.labelFont};
+  text-transform:uppercase;
+  ${!s.showLabel?'display:none;':''}
+}
+.alert-username{
+  font-size:${s.usernameSize}px;
+  font-family:${s.usernameFont};
+  font-weight:${s.usernameWeight};
+  ${usernameCss}
+  ${s.textShadow>0?`text-shadow:1px 1px ${s.textShadow}px rgba(0,0,0,0.8);`:''}
+}
+${s.showPlatform?`.platform-badge{
+  position:absolute;
+  ${s.platformPos.includes('top')?'top:-10px;':'bottom:-10px;'}
+  ${s.platformPos.includes('right')?'right:-4px;':'left:-4px;'}
+  background:${s.platformColor};
+  color:#000;padding:2px 7px;border-radius:4px;
+  font-size:9px;font-family:'Syne',sans-serif;font-weight:800;letter-spacing:0.5px;
+}`:''}
+${s.reflection?`.reflection{position:absolute;top:0;left:0;width:100%;height:50%;background:linear-gradient(to bottom,rgba(255,255,255,0.05),transparent);border-radius:${s.radius}px;pointer-events:none;}`:''}
+@keyframes fa-bounce-in{0%{transform:translate(-50%,-80px) scale(0.7);opacity:0}60%{transform:translate(-50%,8px) scale(1.05);opacity:1}80%{transform:translate(-50%,-4px) scale(0.98)}100%{transform:translate(-50%,0) scale(1);opacity:1}}
+@keyframes fa-slide-in{0%{transform:translate(-170px,0);opacity:0}100%{transform:translate(-50%,0);opacity:1}}
+@keyframes fa-zoom-in{0%{transform:translate(-50%,0) scale(0) rotate(-10deg);opacity:0}60%{transform:translate(-50%,0) scale(1.08);opacity:1}100%{transform:translate(-50%,0) scale(1);opacity:1}}
+@keyframes fa-bounce-out{0%{transform:translate(-50%,0) scale(1);opacity:1}30%{transform:translate(-50%,-12px) scale(1.05)}100%{transform:translate(-50%,-80px) scale(0.7);opacity:0}}
+@keyframes fa-slide-out{0%{transform:translate(-50%,0);opacity:1}100%{transform:translate(calc(-50% + 200px),0);opacity:0}}
+@keyframes fa-zoom-out{0%{transform:translate(-50%,0) scale(1);opacity:1}100%{transform:translate(-50%,0) scale(0);opacity:0}}
+@keyframes fa-ring{0%,100%{transform:rotate(0)}15%{transform:rotate(-18deg)}30%{transform:rotate(18deg)}45%{transform:rotate(-12deg)}60%{transform:rotate(12deg)}75%{transform:rotate(-6deg)}}
+@keyframes fa-heartbeat{0%,100%{transform:scale(1)}14%{transform:scale(1.2)}28%{transform:scale(1)}42%{transform:scale(1.15)}70%{transform:scale(1)}}
+@keyframes fa-pulse-icon{0%,100%{transform:scale(1)}50%{transform:scale(1.18)}}
+@keyframes fa-spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+@keyframes fa-shake{0%,100%{transform:rotate(0)}20%{transform:rotate(-12deg)}40%{transform:rotate(12deg)}60%{transform:rotate(-8deg)}80%{transform:rotate(8deg)}}
+@keyframes fa-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+</style>
+</head>
+<body>
+<div id="follower-alert" class="hidden">
+  ${s.reflection?'<div class="reflection"></div>':''}
+  <div class="icon-wrap">
+    <div class="icon-svg">${iconData.svg}</div>
+  </div>
+  <div class="texts">
+    <div class="alert-label">${s.labelText}</div>
+    <div class="alert-username" id="alert-username">${s.usernamePrefix||''}Kullanıcı${s.usernameSuffix?' '+s.usernameSuffix:''}</div>
+  </div>
+  ${s.showPlatform?`<div class="platform-badge">${platLabel}</div>`:''}
+</div>
+<script>
+const alert = document.getElementById('follower-alert');
+const usernameEl = document.getElementById('alert-username');
+const queue = [];
+let isAnimating = false;
+const ENTER_ANIM = '${s.enterAnim}';
+const EXIT_ANIM = '${s.exitAnim}';
+const ENTER_DUR = ${s.enterDur};
+const DISPLAY_DUR = ${s.displayDur};
+const EXIT_DUR = ${s.exitDur};
+const QUEUE_DELAY = ${s.queueDelay};
+const PREFIX = '${(s.usernamePrefix||'').replace(/'/g,"\\'")}';
+const SUFFIX = '${(s.usernameSuffix?' '+s.usernameSuffix:'').replace(/'/g,"\\'")}';
+const enterAnimMap = {bounce:'fa-bounce-in',slide:'fa-slide-in',zoom:'fa-zoom-in',flip:'fa-zoom-in'};
+const exitAnimMap = {bounce:'fa-bounce-out',slide:'fa-slide-out',zoom:'fa-zoom-out',drop:'fa-bounce-out'};
+document.addEventListener('widgetEvent', e => {
+  const ev = e.detail.event_name;
+  if(ev === 'followEvent' || ev === 'subscribeEvent' || ev === 'raidEvent') {
+    let name = 'Yeni Biri';
+    const d = e.detail.data || {};
+    if(d.username) name = d.username;
+    else if(d.user && d.user.username) name = d.user.username;
+    else if(d.displayName) name = d.displayName;
+    queue.push(name);
+    processQueue();
+  }
+});
+function processQueue() {
+  if(isAnimating || queue.length===0) return;
+  isAnimating = true;
+  const name = queue.shift();
+  usernameEl.textContent = PREFIX + name + SUFFIX;
+  const ea = enterAnimMap[ENTER_ANIM]||'fa-bounce-in';
+  alert.style.animation = ea+' '+(ENTER_DUR/1000)+'s cubic-bezier(0.34,1.56,0.64,1) forwards';
+  alert.classList.remove('hidden');
+  alert.classList.add('show');
+  setTimeout(() => {
+    const xa = exitAnimMap[EXIT_ANIM]||'fa-bounce-out';
+    alert.style.animation = xa+' '+(EXIT_DUR/1000)+'s ease-in forwards';
+    setTimeout(() => {
+      alert.style.animation = 'none';
+      alert.classList.remove('show');
+      alert.classList.add('hidden');
+      isAnimating = false;
+      setTimeout(processQueue, QUEUE_DELAY);
+    }, EXIT_DUR + 50);
+  }, ENTER_DUR + DISPLAY_DUR);
+}
+<\/script>
+</body>
+</html>`;
+
+  const blob = new Blob([obsHTML],{type:'text/html;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href=url; a.download='follower-alert-widget.html'; a.click();
+  URL.revokeObjectURL(url);
+  showToast('OBS widget dosyası indirildi!');
+}
+
+function resetToDefault() {
+  if(!confirm('Tüm ayarlar sıfırlansın mı?')) return;
+  state = deepClone(DEFAULT_STATE);
+  updateUIFromState();
+  showToast('Varsayılana dönüldü');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2400);
+}
+
+// ─── UTILS ───
+function hexToRgb(hex) {
+  hex = hex.replace('#','');
+  if(hex.length===3) hex=hex.split('').map(c=>c+c).join('');
+  const n=parseInt(hex,16);
+  return [(n>>16)&255,(n>>8)&255,n&255];
+}
+
+// ─── INIT ───
+buildIconGrid();
+
+window.onload = () => {
+  const saved = localStorage.getItem('followerLastStateV1');
+  if(saved) {
+    try { state = Object.assign(deepClone(DEFAULT_STATE), JSON.parse(saved)); } catch(e){}
+  }
+  updateUIFromState();
+  renderPresets();
+  // Reset preview position
+  const alert = document.getElementById('follower-alert-preview');
+  alert.style.opacity = '1';
+  alert.style.animation = 'none';
+};
+</script>
+</body>
+</html>
